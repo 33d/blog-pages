@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>The FlySky iBus protocol</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2017/10/22/flysky-ibus-protocol/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2017/10/08/jekyll-blog-travis-ci/">Build a Jekyll blog with Travis CI without granting write access</a></p>
+    <p class="post-nav-newer"><a href="/posts/2018/09/13/brushed-bustophedon-esc-schematic/">Schematic for the "Bustodephon" brushed motor electronic speed controller (ESC)</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>The FlySky iBus protocol</h1>
+    <p class="meta">2017-10-22</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>This is the FlySky iBus protocol that I’ve gleaned from <a href="https://basejunction.wordpress.com/2015/08/23/en-flysky-i6-14-channels-part1/">a blog post</a> and a <a href="https://github.com/aanon4/FlySkyIBus">single library</a>.</p>
+
+<p>Data is transmitted as serial UART data, 115200bps, 8N1.  A message is sent every 7 milliseconds.  <a href="https://www.banggood.com/818CH-Mini-Receiver-With-PPM-iBus-SBUS-Output-for-Flysky-i6-i6x-AFHDS-2A-Transmitter-p-1183313.html">My receiver</a> sends this over its white wire, and stops sending a few tenths of a second after the transmitter is switched off (unlike the PPM signal on the yellow wire, which keeps sending its last value).</p>
+
+<p>The first byte is 0x20, the second is 0x40.</p>
+
+<p>Next are 14 pairs of bytes, which is the channel value in little endian byte order.  The FS-i6 is a 6 channel receiver, so it fills in the first 6 values.  The remainder are set to 0x05DC.  My transmitter sends values between 0x3E8 and 0x7D0.</p>
+
+<p>Finally a 2 byte checksum is sent.  It’s in little endian byte order, it starts at 0xFFFF, from which every byte’s value is subtracted except for the checksum.</p>
+
+<p>I’ve written <a href="https://github.com/33d/ibus-library">a library</a> to decode this data.  An Arduino could measure the time of the message start to improve detection of the message start.  One problem using an Arduino is that the board will interfere with programming - a resistor (maybe 10k) on the data line should help.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/flysky-ibus-protocol";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2017/10/22/flysky-ibus-protocol");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

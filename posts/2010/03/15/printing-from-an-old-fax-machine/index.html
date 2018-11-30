@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Printing from an old fax machine</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2010/03/15/printing-from-an-old-fax-machine/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/03/12/microcontroller-ttl-to-rs232-communication/">Microcontroller TTL to RS232 communication</a></p>
+    <p class="post-nav-newer"><a href="/posts/2010/03/28/joule-thief/">Joule thief</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Printing from an old fax machine</h1>
+    <p class="meta">2010-03-15 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I use my printer about twice a year.  I went to use it the other day.  The ink was dry.  What type of printer will work when I want?</p>
+
+<p>Inkjets go dry.  I suspect lasers cost a lot of money when they stop working.  Dot-matrix printers don’t exist anymore.</p>
+
+<p>How about a thermal printer, like those old fax machines?  If I print something at home, I probably don’t need the printout to last.  They don’t have ink that can run out.  (They have paper that runs out, but I’d think its shelf life is pretty good.)</p>
+
+<p>One problem, faxes aren’t designed to print - at least the old ones that use thermal paper - so how do I print with it?</p>
+
+<p>A few options:</p>
+
+<ul>
+  <li>
+    <p>Use a microcontroller to talk phone signals to it.  I’m not sure if the microcontroller would be fast enough, but talking the protocol would be tricky.</p>
+  </li>
+  <li>
+    <p>Use an external modem and a fake phone line to talk to it.  It solves the protocol problems but it takes a lot of equipment.</p>
+  </li>
+  <li>
+    <p>Open up the fax and drive the heaters and rollers directly.  No protocols to get working, only random parts that I have no idea how to operate.</p>
+  </li>
+</ul>
+
+<p>Time to get my hands on an old fax machine…</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/printing-from-an-old-fax-machine";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2010/03/15/printing-from-an-old-fax-machine");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

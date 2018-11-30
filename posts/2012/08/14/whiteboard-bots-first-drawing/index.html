@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Whiteboard bot's first drawing</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/08/14/whiteboard-bots-first-drawing/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/07/03/whiteboard-robot-number-crunching/">Whiteboard robot number crunching</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">Getting started with an STM32L Discovery with Linux and GCC</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Whiteboard bot's first drawing</h1>
+    <p class="meta">2012-08-14 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  
+<div class="content-image">
+<a href="/images/wp/2012-08-14-whiteboard-bots-first-drawing/whiteboard-bots-first-drawing.jpg">
+<img src="/" alt="" srcset=" /images/wp/2012-08-14-whiteboard-bots-first-drawing/whiteboard-bots-first-drawing.jpg 198w" sizes="400px" />
+</a>
+</div>
+
+<p>Here’s the first drawing from my whiteboard robot! It doesn’t draw anything by itself because I must have messed up the maths, but I was able to operate it manually and draw some circles. The lines are wonky because the wall the board was attached to was shaking. I didn’t get the pen to move in and out, to draw separate lines.</p>
+
+<p>The robot suspends a whiteboard marker from two strings.  The strings are wrapped around pulleys.  The strings are wound onto spools, driven by motors connected via a serial link to a PC.  The PC interprets an SVG image, and calculates how much each motor needs to turn to draw each line segment.</p>
+
+<p>It’s currently being driven with a <a href="http://www.pololu.com/docs/0J14">Pololu Baby Oranguatan</a> and some <a href="http://www.goldmine-elec-products.com/prodinfo.asp?number=G16279">DC motors</a>  that were lent to me, and various 3D printed parts to hold the pen and wind the string.</p>
+
+<p>I have a few complaints about the Baby Orangutan.  First is their choice to use two wires to connect the H-bridge driver.  This makes the motors slightly easier to move, but means that to drive two motors, you need to use both 8-bit timers on the AVR.  With a 3-wire connection (two for direction, one for PWM), I would only have needed to use one timer, leaving the other one for Arduino compatibility or to drive the servo which moves the pen in and out.  My other issue is the placement of the status LED: I would have thought it goes on port B5 - like the Arduino - but they put it on one of the serial port pins, making it useless if you’re using the serial port.</p>
+
+<p>I had the circuit powered at Science Alive for a few hours, but the manual movement function stopped working.  I connected the circuit on perfboard using very thin enamelled wire.  I doubled the wires between the H-bridge chip and the motors, but wasn’t smart enough to do the same for the power supply, so there might have been some brownouts when the motors started.  I should add some capacitors too.  The motors were less powerful than I expected, so my 10cm reels put a bit too much strain on the motors.  I’ll have to get some smaller reels printed.</p>
+
+<p>I think I’ll get the simulator running again - hopefully that will help me get the calculations for the reel movement correct.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/whiteboard-bots-first-drawing";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/08/14/whiteboard-bots-first-drawing");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

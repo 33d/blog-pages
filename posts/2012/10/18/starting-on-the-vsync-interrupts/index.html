@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Starting on the vsync interrupts</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/10/18/starting-on-the-vsync-interrupts/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/10/16/coding-pwm-on-the-stm32l/">Coding PWM on the STM32L</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/10/20/more-on-the-vsync-interrupts/">More on the vsync interrupts</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Starting on the vsync interrupts</h1>
+    <p class="meta">2012-10-18 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Now it’s time to adjust the sync signals to get vsync working, so I need an interrupt when the signal goes low so I can adjust the sync pulse on the next cycle.  I have no idea how to start the interrupts.</p>
+
+<p>I did a search in the ChibiOS code for the term “vect”, and found a bunch of them in <code>hal/platforms/STM32L1xx/hal_lld.h</code>, of which TIM11_IRQHandler looks the most appropriate.  But there seems to be only one vector all possible events, like an overflow or a compare match.</p>
+
+<p>It <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:howtos:interrupts">looks like “fast” interrupt handlers</a> look like this:</p>
+
+<pre><code>volatile int line;
+CH_IRQ_HANDLER(TIM11_IRQHandler) {
+  ++line;
+}
+</code></pre>
+
+<p>It compiles at least… but did it register as an interrupt handler?  I tried the trick with AVRs that shows disassembled code:</p>
+
+<pre><code>arm-none-eabi-objdump -S -h build/ch.elf
+</code></pre>
+
+<p>It shows that the first section starts at address 0x08000100… just after the vector table, which should appear at the start! Right at the top though, there’s a “startup” section at the correct address. After stuffing around with various objdump options, this showed me the vector table:</p>
+
+<pre><code>arm-none-eabi-objdump -h -s --special-syms build/ch.elf
+</code></pre>
+
+<p>Table 34 of the reference manual lists all of the interrupts, and TIM11 is at offset 0xAC. Objdump doesn’t show anything promising in this location!  But there’s something strange in <code>hal_lld.h</code>:</p>
+
+<pre><code>#define TIM9_IRQHandler         VectorA0    /**&lt; TIM9.                      */
+#define TIM10_IRQHandler        VectorA4    /**&lt; TIM10.                     */
+#define TIM11_IRQHandler        VectorA8    /**&lt; TIM11.                     */
+#define LCD_IRQHandler          VectorAC    /**&lt; LCD.                       */
+</code></pre>
+
+<p>The datasheet though says that the LCD is vector A0, TIM9 is A4, 10 is A8 and 11 is AC.  I guess the way to find out is to try both and see what happens.</p>
+
+<p>First the timer needs to be configured to use those interrupts.</p>
+
+<pre><code>  TIM11-&gt;DIER = TIM_DIER_UIE; // enable interrupt on "update" (ie. overflow)
+</code></pre>
+
+<p>So does this do anything? I used the debugger to find out:</p>
+
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gdb build/ch.elf &lt;/strong&gt;
+....
+Reading symbols from /home/damien/projects/stm32/video/build/ch.elf...done.
+(gdb) &lt;strong&gt;p lineA8&lt;/strong&gt;
+$1 = 0
+(gdb) &lt;strong&gt;p lineAC&lt;/strong&gt;
+$2 = 0
+(gdb) &lt;strong&gt;cont&lt;/strong&gt;
+^C
+Program received signal SIGINT, Interrupt.
+0x08000598 in _idle_thread (p=)
+    at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
+62	  chRegSetThreadName("idle");
+(gdb) &lt;strong&gt;p lineAC&lt;/strong&gt;
+$3 = 0
+(gdb) &lt;strong&gt;p lineA8&lt;/strong&gt;
+$4 = 0
+(gdb)
+</code></pre>
+
+<p>So it’s doing nothing!  Why not? I looked through the ChibiOS sources where the timers are configured, and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8c_source.html#l00296">found a call to nvicEnableVector</a>, which looks promising.  It needs a “priority” parameter though, so what should that be?  <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8h.html">gpt_lld.h</a> lists some priorities.  ChibiOS always sends the priorities through a macro called <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/group___a_r_m_c_mx___c_o_r_e.html#gabf50672d926743f012521dad719f3a0f">CORTEX_PRIORITY_MASK</a>, but that seems to move the number to the correct place in a register.  The CPU manual (section 5.3) says that lower numbers have higher priority, and this needs to be very high, so I’ll choose 2.</p>
+
+<pre><code>  nvicEnableVector(TIM11_IRQn, CORTEX_PRIORITY_MASK(2));
+</code></pre>
+
+<p>It doesn’t like that much - the light doesn’t blink, so it looks like the chip crashed!  I’m starting to get a bit annoyed with my slow progress; maybe I’ll try to rewrite my code using ChibiOS as much as I can.  While this chip is powerful, its also very complicated, which makes me think it’s not that practical to program it directly.  <a href="http://sourcegate.wordpress.com/2012/10/20/more-on-the-vsync-interrupts/">I soldiered on anyway</a>…</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/starting-on-the-vsync-interrupts";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/10/18/starting-on-the-vsync-interrupts");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Add a caption to a JPEG image without reencoding</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/01/06/add-a-caption-to-a-jpeg-image-without-reencoding/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2011/12/17/run-a-v-usb-demo-on-an-avr-stick-easylogger/">Run a V-USB demo on an AVR stick (Easylogger)</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/03/11/a-very-cheap-avr-dev-board/">A very cheap AVR dev board</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Add a caption to a JPEG image without reencoding</h1>
+    <p class="meta">2012-01-06 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I was looking for a way to add captions to JPEG images without re-encoding them.  It turns out there’s <a href="http://jpegclub.org/jpegtran/">a patch to jpegtran</a> that overlay one JPEG image over another one, without re-encoding either.  Here’s how I built it:</p>
+
+<ol>
+  <li>
+    <p>Download <a href="http://www.ijg.org/">the sources of the IJG version of jpegtran</a> (I used version 8c), and decompress it somewhere</p>
+  </li>
+  <li>
+    <p>Download <a href="http://jpegclub.org/droppatch.v8.tar.gz">the “drop” patch</a>, and copy the source files into the source extracted in the previous step</p>
+  </li>
+  <li>
+    <p>configure, make (as usual)</p>
+  </li>
+</ol>
+
+<p>I made a script that automatically adds a label using Imagemagick to create the label, and this version of jpegtran to put them together:</p>
+
+<pre><code>#!/bin/sh
+
+JPEGTRAN="/opt/jpeg-8c/bin/jpegtran"
+
+if [ $# -lt 3 ] ; then
+echo "Usage: jpeglabel [label] [in] [out]" &gt;2
+exit 2
+fi
+
+LABELFILE=`mktemp`
+convert -type truecolor -size 256x16 "label:$1" jpg:"$LABELFILE"
+"$JPEGTRAN" -drop +16-16 "$LABELFILE" -outfile "$3" "$2"
+
+rm "$LABELFILE"
+</code></pre>
+
+<p>I tried making some examples to show, but it turns out the (experimental) “drop” patch is very fussy about the files you give it.  I got it to work on 320x240 pictures from my camera, but not on some other images I tried.  It requires the “sampling ratio” to be the same on both images, which is found in the advanced JPEG settings in Gimp.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/add-a-caption-to-a-jpeg-image-without-reencoding";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/01/06/add-a-caption-to-a-jpeg-image-without-reencoding");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

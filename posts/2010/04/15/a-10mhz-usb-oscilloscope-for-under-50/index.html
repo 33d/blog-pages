@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>A 10MHz USB oscilloscope for under $50?</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2010/04/15/a-10mhz-usb-oscilloscope-for-under-50/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/04/10/vga-from-an-arduino/">VGA from an Arduino?</a></p>
+    <p class="post-nav-newer"><a href="/posts/2010/04/17/inside-a-fake-wii-remote-and-nunchuck/">Inside a fake Wii remote and nunchuck</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>A 10MHz USB oscilloscope for under $50?</h1>
+    <p class="meta">2010-04-15 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Oscilloscopes are expensive.  USB ones are too.  I reckon one can be built for under $50.</p>
+
+<p>Here’s the idea:</p>
+
+<div class="content-image">
+<a href="/images/wp/2010-04-15-a-10mhz-usb-oscilloscope-for-under-50/usbosc.png">
+<img src="/" alt="" srcset=" /images/wp/2010-04-15-a-10mhz-usb-oscilloscope-for-under-50/usbosc.png 300w" sizes="400px" />
+</a>
+</div>
+
+<p>(The “WR” on the FIFO are the two write pins, not a read and a write pin.)</p>
+
+<p>A sawtooth wave is fed into a comparator whose output goes high when the input signal is above the wave.  This output causes the FIFO to read the state from its input pins.  This input is fed by an 8-bit counter, whose value represents the input signal (counters and op-amps are much cheaper than ADCs).  The counter also supplies the 12MHz clock to the USB FIFO, as well as pulling down the “ramp generator” (which is one of the op-amps configured as an integrator).</p>
+
+<p>Here are some of the parts:</p>
+
+<table>
+<tr>PartExample partCost
+<tr>
+<td>Comparator  
+Ramp generator
+<td>LMV339 quad op-amp
+<td>$2.50
+<tr>
+<td>8-bit counter
+<td>74F269 100MHz counter
+<td>$2.00
+<tr>
+<td>USB FIFO
+<td>FT2232H dual USB 2.0 FIFO
+<td>$20.00
+<tr>
+<td colspan="2">Parts for FT2232H (EEPROM, regulator)  
+PCB  
+Other components
+<td>$25.00
+&lt;/table&gt;
+
+The high frequencies involved might be a bit beyond me.  The parts above should be able to handle it, but no doubt there's plenty of issues involving AC signals that I have no idea about.
+
+
+
+One problem might be the input impedance - real scopes are about 1MΩ, but if necessary we can add a voltage follower on each input.
+
+
+
+It probably won't be the most accurate device in the world, but as long as you just want to see the signal and don't need to know it's 3.17863 volts, it should be fine.  And it's a _lot_ cheaper than an off-the-shelf one.
+</td></td></tr></td></td></td></tr></td></td></td></tr></td></td></td></tr></tr></table>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/a-10mhz-usb-oscilloscope-for-under-50";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2010/04/15/a-10mhz-usb-oscilloscope-for-under-50");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Implementing the virtual guestbook</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2013/06/06/338/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2013/05/20/the-virtual-guestbook/">The Virtual Guestbook</a></p>
+    <p class="post-nav-newer"><a href="/posts/2013/06/14/sync-to-a-digital-tv-signal/">Synchronize a Linux box to a digital TV signal</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Implementing the virtual guestbook</h1>
+    <p class="meta">2013-06-06 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>So how about implementing the virtual message board?  I’ll try it in a virtual machine first.</p>
+
+<h1 id="the-vm">The VM</h1>
+
+<p>Create a new Virtualbox VM, give it 32MB of RAM, and get it to boot of <a href="http://downloads.openwrt.org/attitude_adjustment/12.09/x86/generic/openwrt-x86-generic-combined-ext4.vdi">the x86 image</a>.  Give it two network adapters: one on an “internal network” - this will represent the wireless network - and one set to NAT, this will be the ethernet port that we can log in with.  You can forward a port through the second adapter for telnet access, that way you can cut and paste stuff.  Start it up.</p>
+
+<h1 id="cleaning-up">Cleaning up</h1>
+
+<p>We don’t need anything related to the GUI configuration, since it probably won’t work when we’re done.  Remove any packages starting with luci, then remove lua and uhttpd.  opkg doesn’t seem to have the concept of an automatically installed package, so you’ll need to remove dependent packages yourself.</p>
+
+<h1 id="networking">Networking</h1>
+
+<p>The “wireless” network needs a static IP address, because it needs to be the DNS and DHCP server for whatever connects.  The other network adapter is used to get to the internet, and needs connect to some other gateway instead.  I put this in <code>/etc/config/network</code>:</p>
+
+<pre><code>config interface lan
+	option ifname eth0
+	option proto static
+	option auto 1
+	option ipaddr 192.168.199.1
+	option netmask 255.255.255.0
+
+config interface wan
+	option ifname eth1
+	option proto dhcp
+	option auto 1
+</code></pre>
+
+<h1 id="the-web-user">The web user</h1>
+
+<p>Add a user to run the web server as.  There doesn’t seem to be a command to do this, so add this to <code>/etc/passwd</code>:</p>
+
+<pre><code>www-data:*:99:99:daemon:/var:/bin/false
+</code></pre>
+
+<h1 id="the-web-server">The web server</h1>
+
+<p>Install Hiawatha.  It doesn’t seem to come with a startup script, so stick this in <code>/etc/init.d/hiawatha</code>:</p>
+
+<pre><code>#!/bin/sh /etc/rc.common
+
+START=98
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+SERVICE_PID_FILE=/var/run/hiawatha.pid
+
+start() {
+  mkdir -p /var/lib/hiawatha
+  mkdir -p /var/log/hiawatha
+  service_start /usr/sbin/hiawatha -d
+}
+
+stop() {
+  service_stop /usr/sbin/hiawatha
+}
+</code></pre>
+
+<p>The OpenWRT init scripts are a bit unusual, but it keeps track of the process ID and things like that.</p>
+
+<p>Run <code>/etc/init.d/hiawatha enable</code> to make the script work.</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>Some basic Hiawatha configuration. These go in <code>/etc/hiawatha/hiawatha.conf</code>:</p>
+
+<strike>I'd like to limit the size of POST messages, so nobody fills up the disk. Hiawatha has an option for this (this sets it to 4kB):
+
+    
+    MaxRequestSize=4
+
+</strike>
+<p><em>This doesn’t work with the (rather dated) version of Hiawatha in OpenWRT</em>.
+It should run as our www-data user:</p>
+
+<pre><code>ServerId = www-data
+</code></pre>
+
+<p>Hiawatha needs to be told what to do when it sees a PHP file.  I’ll use FastCGI so I can limit the maximum number of PHP processes that run at once:</p>
+
+<pre><code>FastCGIserver {
+        FastCGIid = PHP5
+        ConnectTo = /tmp/guestbook-fastcgi
+        Extension = php
+        SessionTimeout = 30
+}
+</code></pre>
+
+<p>This describes how to handle the “php” extension, but it doesn’t tell it to actually use it.  Note the “FastCGIid” line, this needs to go later in the file where the “default” site is configured - that is, where WebsiteRoot is.</p>
+
+<pre><code>UseFastCGI = PHP5
+</code></pre>
+
+<p>There will be more configuration later.</p>
+
+<h1 id="php">PHP</h1>
+
+<p>Install php-fastcgi.  We’ll need a socket for the web server to talk fastcgi to, so put this in <code>/etc/config/php5-fastcgi</code>:</p>
+
+<pre><code>config php5-fastcgi
+        option enabled 1
+        option port /tmp/guestbook-fastcgi
+</code></pre>
+
+<p>I’m sure <code>/tmp</code> isn’t the place to put this but since <code>/tmp</code> is a ramdisk and is empty on each boot, this should be fine.</p>
+
+<p>I had to add this near the top of <code>/etc/init.d/php5-fastcgi</code> to stop it running as root:</p>
+
+<pre><code>SERVICE_UID=99
+</code></pre>
+
+<p>Also, to limit the number of connections that PHP handles at once, change the service_start line to look like this:</p>
+
+<pre><code>        PHP_FCGI_CHILDREN='4' \
+        PHP_FCGI_MAX_REQUESTS='50' \
+        service_start /usr/bin/php-fcgi -b $port
+</code></pre>
+
+<p>Hopefully this means that if more than 4 clients connect, the others will have to wait until another request finishes.</p>
+
+<h1 id="dnsmasq">dnsmasq</h1>
+
+<p>I want to get clients to connect to some website - presumably their home page - to be redirected to the guestbook.  One way to do this is to change each name lookup to redirect to the router instead.</p>
+
+<p>It turns out that’s not hard; this goes in <code>/etc/dnsmasq.conf</code>:</p>
+
+<pre><code>address=/#/192.168.199.1
+</code></pre>
+
+<p>This tells dnsmasq to resolve all adresses to the router.</p>
+
+<p>It’s also probably bad to do this on the wired interface though, so this line should do this:</p>
+
+<pre><code>interface=eth0
+</code></pre>
+
+<p>(or whatever the wired interface is)</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/338";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2013/06/06/338");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

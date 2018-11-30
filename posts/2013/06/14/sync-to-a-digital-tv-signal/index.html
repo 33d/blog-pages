@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Synchronize a Linux box to a digital TV signal</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2013/06/14/sync-to-a-digital-tv-signal/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2013/06/06/338/">Implementing the virtual guestbook</a></p>
+    <p class="post-nav-newer"><a href="/posts/2013/08/12/science-alive-noise-maker/">Science Alive noise maker</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Synchronize a Linux box to a digital TV signal</h1>
+    <p class="meta">2013-06-14 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I remembered seeing some command which could synchronize the system clock to the digital TV (DVB) signal. This is ideal for a MythTV box which isn’t connected to the internet.  It’s <code>dvbdate</code>. One problem: <a href="http://www.mythtv.org/wiki/Dvbdate">it ignores the system time zone</a>. It can use the <code>TZ</code> environment variable, whose current value can be obtained using the date <code>command</code>:</p>
+
+<pre><code>date +'%z'
+</code></pre>
+
+<p>so this will set the date:</p>
+
+<pre><code>sudo TZ=$(date +'%:z') dvbdate --set
+</code></pre>
+
+<p>so you can put this script in <code>/etc/cron.hourly</code>, and make it executable:</p>
+
+<pre><code>#!/bin/sh -e
+TZ=$(date +'%:z') dvbdate --set
+</code></pre>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/sync-to-a-digital-tv-signal";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2013/06/14/sync-to-a-digital-tv-signal");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

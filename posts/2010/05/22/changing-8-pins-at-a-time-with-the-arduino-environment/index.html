@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Changing 8 pins at a time with the Arduino environment</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2010/05/22/changing-8-pins-at-a-time-with-the-arduino-environment/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/04/17/inside-a-fake-wii-remote-and-nunchuck/">Inside a fake Wii remote and nunchuck</a></p>
+    <p class="post-nav-newer"><a href="/posts/2010/06/12/download-the-packages-for-an-offline-ubuntu-upgrade/">Download the packages for an offline Ubuntu upgrade</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Changing 8 pins at a time with the Arduino environment</h1>
+    <p class="meta">2010-05-22 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>A quick demo of how to change 8 pins at a time with an Arduino, using some AVR C code:</p>
+
+<pre><code>void setup() {
+  DDRD = 0xFF;
+}
+
+void loop() {
+  static uint8_t lights;
+
+  lights &gt;&gt;= 1;
+  lights ^= (~lights) &lt;&lt; 7;
+  PORTD = lights;
+  delay(100);
+}
+</code></pre>
+
+<p>This makes lights connected to pins 0-7 flash (I <a href="http://www.mediafire.com/?yjmzz3oqkrk">have a video</a>).  I used LEDs connected to 220Ω resistors.</p>
+
+<p>I needed to use port D since that’s the only port the Arduino exposes all pins on.  The problem is you need to disconnect pins 0 and 1 to upload a new sketch, because they’re also the serial lines to the FTDI chip.</p>
+
+<p>A bit about how it works:</p>
+
+<p><code>DDRD</code> is the Data Direction Register (DDR) for port D.  Bits set to 1 are outputs, and 0 are inputs.  This line sets them all to outputs.  Calling <code>pinMode()</code> on pins 0-7 manipulates this register.</p>
+
+<p>In <code>loop()</code>, <code>static</code> means this value doesn’t reset for each function call.  <code>uint8_t</code> means “unsigned 8-bit integer”.  By using this instead of an <code>int</code>, the AVR only needs one instruction to manipulate it instead of the two it needs for the 16-bit <code>int</code>.</p>
+
+<p>Setting <code>PORTD</code> changes the pins on port D.  Calling <code>digitalWrite()</code> with pins 0-7 changes this register, but writing to <code>PORTD</code> directly changes all of the pins at once.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/changing-8-pins-at-a-time-with-the-arduino-environment";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2010/05/22/changing-8-pins-at-a-time-with-the-arduino-environment");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

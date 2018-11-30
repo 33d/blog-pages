@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Video signal output circuitry</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/10/28/video-signal-output-circuitry/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/10/23/dma-on-the-stm32l-discovery/">DMA on the STM32L Discovery</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/11/04/code-to-produce-video-signals-on-the-stm32l-discovery/">Code to produce video signals on the STM32L Discovery</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Video signal output circuitry</h1>
+    <p class="meta">2012-10-28 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I’ll need a simple circuit to mix my video signals together. <a href="http://code.google.com/p/arduino-tvout/">The Arduino TV Out library shows how to do this</a>, but that works with 5V IOs, but the <a href="http://www.st.com/internet/evalboard/product/250990.jsp">STM32L Discovery</a> (and all ARM chips AFAIK) uses 3.3V.</p>
+
+<p>So which resistors will I need?  To produce a white signal, the sync and video lines will be high.  The equivalent circuit looks like this:</p>
+
+<div class="content-image">
+<a href="/images/wp/2012-10-28-video-signal-output-circuitry/video-out-high-schematic.png">
+<img src="/" alt="" srcset=" /images/wp/2012-10-28-video-signal-output-circuitry/video-out-high-schematic.png 313w" sizes="400px" />
+</a>
+</div>
+
+<p>(The 75Ω resistor is the resistance inside the TV).</p>
+
+<p>To show a black signal, the sync line will be high, and the video line will be low, which looks like this:</p>
+
+<div class="content-image">
+<a href="/images/wp/2012-10-28-video-signal-output-circuitry/video-out-low-schematic.png">
+<img src="/" alt="" srcset=" /images/wp/2012-10-28-video-signal-output-circuitry/video-out-low-schematic.png 218w" sizes="400px" />
+</a>
+</div>
+
+<p><a href="http://en.wikipedia.org/wiki/Voltage_divider#General_case">Wikipedia gives the formula for a voltage divider</a>, so the resistors in the first diagram can be calculated with this formula:</p>
+
+<p>FIXME</p>
+
+<p>and in the second:</p>
+
+<p>FIXME</p>
+
+<p>I tried solving these, but that’s well beyond my mathematical ability.  Instead I found some online site that could <a href="http://www.quickmath.com/webMathematica3/quickmath/graphs/equations/advanced.jsp#c=plot_advancedgraphequations&amp;v1=1%3D75%2F(75%2B1%2F(1%2Fy%2B1%2Fx))*3.3&amp;v2=0.3%3D(1%2F(1%2Fy%2B1%2F75))%2F((1%2F(1%2Fy%2B1%2F75))%2Bx)*3.3&amp;v7=x&amp;v8=y&amp;v9=0&amp;v10=1000&amp;v11=0&amp;v12=1000&amp;v19=1&amp;v24=1&amp;v25=Video+generator+resistors">plot the two formulas</a> (edit: I could have <a href="http://www.wolframalpha.com/input/?i=1%3D75%2F%2875%2B1%2F%281%2Fy%2B1%2Fx%29%29*3.3%2C+0.3%3D%281%2F%281%2Fy%2B1%2F75%29%29%2F%28%281%2F%281%2Fy%2B1%2F75%29%29%2Bx%29*3.3">used Wolfram Alpha</a>).  The lines crossed at about RV=250Ω and RS=580Ω. These resistor values don’t exist, so RV=270Ω and RS=560Ω is close enough.  They seem to work fine in the circuit.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/video-signal-output-circuitry";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/10/28/video-signal-output-circuitry");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

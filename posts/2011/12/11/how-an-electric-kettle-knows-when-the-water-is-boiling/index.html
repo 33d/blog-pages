@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>How an electric kettle knows when the water is boiling</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2011/12/11/how-an-electric-kettle-knows-when-the-water-is-boiling/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2011/11/21/laser-printer-mirror-hacking/">Laser printer mirror hacking</a></p>
+    <p class="post-nav-newer"><a href="/posts/2011/12/17/run-a-v-usb-demo-on-an-avr-stick-easylogger/">Run a V-USB demo on an AVR stick (Easylogger)</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>How an electric kettle knows when the water is boiling</h1>
+    <p class="meta">2011-12-11 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>My cheap kettle leaked.  You couldn’t press the lever down when it wasn’t on the base, so I hoped to find an electromagnet which held the switch on when it had power.  I didn’t find one (I only managed to salvage two neon lights from it), but I found out how kettles switch off when they’re boiling.</p>
+
+<p>The steam is collected by this hood, which sends it down the tube into the base.</p>
+
+<div class="content-image">
+<a href="/images/wp/2011-12-11-how-an-electric-kettle-knows-when-the-water-is-boiling/kettle1.jpg">
+<img src="/" alt="" srcset=" /images/wp/2011-12-11-how-an-electric-kettle-knows-when-the-water-is-boiling/kettle1.jpg 300w" sizes="400px" />
+</a>
+</div>
+
+<p>The steam then enters the base of the kettle through the hole at the bottom of this picture, where it’s deflected onto this disk.</p>
+
+<div class="content-image">
+<a href="/images/wp/2011-12-11-how-an-electric-kettle-knows-when-the-water-is-boiling/kettle2.jpg">
+<img src="/" alt="" srcset=" /images/wp/2011-12-11-how-an-electric-kettle-knows-when-the-water-is-boiling/kettle2.jpg 300w" sizes="400px" />
+</a>
+</div>
+
+<p>The disk flexed when I pressed in the middle.  The part that sticks out pressed against the lever that switches the kettle on and off.  I guess that as the disk heats and expands, it flexes in the same way.</p>
+
+<p>The lever that operates the kettle is like a large <a href="http://en.wikipedia.org/wiki/Microswitch">microswitch</a>, in that it always snaps to one side or the other, and takes little force to change.  The disk flexes and presses lightly on the lever, but it’s enough force to trip the switch so the kettle turns off.</p>
+
+<p>I didn’t find the electromagnet I was looking for.  Instead, whether the lever stays down depends on whether the kettle is sitting on its base.  If not, a pin with a strong spring on it protrudes from the bottom of the kettle.  The spring prevents the lever from staying down.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/how-an-electric-kettle-knows-when-the-water-is-boiling";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2011/12/11/how-an-electric-kettle-knows-when-the-water-is-boiling");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ChibiOS on the STM32L Discovery</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/10/01/chibios-on-the-stm32l-discovery/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/09/27/using-sts-libraries-with-the-stm32l-discovery/">Using ST's libraries with the STM32L Discovery</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/10/07/timing-video-signals-from-the-stm32l-discovery/">Timing video signals from the STM32L Discovery</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>ChibiOS on the STM32L Discovery</h1>
+    <p class="meta">2012-10-01 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I <a href="http://sourcegate.wordpress.com/2012/09/27/using-sts-libraries-with-the-stm32l-discovery/">previously used the libraries provided by ST to do something on the STM32L Discovery</a>, now I’ve made a short demo of using <a href="http://www.chibios.org/">ChibiOS</a>.  Hopefully by using an OS to write code, I don’t have to mess around with timers myself to process events periodically, which I always found time consuming on the AVR.  Here’s what I did:</p>
+
+<ol>
+  <li>
+    <p><a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:download">Download</a> and extract ChibiOS.  I used version 2.4.2.  I extracted the archive to /opt.</p>
+  </li>
+  <li>
+    <p>Make a copy of this directory: <code>ChibiOS_2.4.2/demos/ARMCM3-STM32L152-DISCOVERY</code>.  This is what I edited for my demo.</p>
+  </li>
+  <li>
+    <p>Delete the <code>keil</code> and <code>iar</code> directories; they’re for different IDEs and we don’t need them.</p>
+  </li>
+  <li>
+    <p>Replace main.c with this:</p>
+  </li>
+</ol>
+
+<pre><code>#include &lt;ch.h&gt;
+#include &lt;hal.h&gt;
+
+int main(void) {
+  halInit();
+  chSysInit();
+
+  palSetPadMode(GPIOB, 7, PAL_MODE_OUTPUT_PUSHPULL);
+  while (1) {
+    palSetPad(GPIOB, 7);
+    chThdSleepMilliseconds(500);
+    palClearPad(GPIOB, 7);
+    chThdSleepMilliseconds(500);
+  }
+}
+</code></pre>
+
+<p>I adapted this from <a href="http://importgeek.wordpress.com/2012/09/22/stm32f4discovery-gpio-programming-using-chibios-rtos/">another blog</a>.</p>
+
+<ol>
+  <li>
+    <p>In the <code>Makefile</code>, change the <code>CHIBIOS</code> variable to point to where you extracted ChibiOS.</p>
+  </li>
+  <li>
+    <p>Run <code>make</code>, then upload the binary to the Discovery.  The correct compiler should be invoked if the Linaro bare-metal compiler is on your PATH, like I did for <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">my first coding attempt</a>.</p>
+  </li>
+</ol>
+
+<p>It’s as simple as that - a light that flashes once a second!</p>
+
+<p>So what does this code do?</p>
+
+<p><code>halInit()</code> and <code>chSysInit()</code> seem to go at the start of any ChibiOS program. The HAL is what tries to abstract out the peripherals on each chip. The <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:documents:architecture">document about the architecture</a> explains this some more.</p>
+
+<p><code>pal</code> means “Port Abstraction Layer”, and functions relating to this start with <code>pal</code>. Functions starting with <code>ch</code> relate to the kernel. There are two reference manuals in ChibiOS: <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/index.html">one for the kernel</a> (the cross platform stuff, although there’s a separate manual for each compiler), and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/index.html">one for the peripherals</a> (the more chip-specific stuff).</p>
+
+<p>It looks like once you call <code>chSysInit</code>, that function continues to run as a thread.  I would hope because we’re calling a sleep function, the CPU is actually sleeping and not busy-waiting.</p>
+
+<p>I’m surprised how easy this was to get running.  The Makefile is very good - you don’t need to keep a copy of the entire operating system in your project directory; it will find it and compile the relevant parts.  There’s no code directly accessing the hardware either, so the I/O code is no more complicated than Arduino code.  Of course I’m expecting to have to learn more about ChibiOS and the STM32L as I make more complicated things.</p>
+
+<p>I’d like to use ChibiOS to write firmware to drive a television from the Discovery, so I can learn about RTOS scheduling and DMA, which I plan to use to copy the framebuffer to the output.  I imagine I’ll need to learn more about how clocks work to control the speed the data is written to the TV.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/chibios-on-the-stm32l-discovery";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/10/01/chibios-on-the-stm32l-discovery");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

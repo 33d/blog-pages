@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Check that your flash memory isn't fake</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii/">Save space used by an Ubuntu VM by using the live CD, the slightly easier way</a></p>
+    <p class="post-nav-newer"><a href="/posts/2017/10/08/jekyll-blog-travis-ci/">Build a Jekyll blog with Travis CI without granting write access</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Check that your flash memory isn't fake</h1>
+    <p class="meta">2015-07-11</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Here’s how I’ve checked that my flash memory (USB stick, SD card etc) isn’t fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.</p>
+
+<p>First, find out how big the flash is:</p>
+
+<pre><code>$ cat /proc/paritions
+major minor  #blocks  name
+...
+8       16   30736384 sdb
+</code></pre>
+
+<p>Some quick maths tells me the block size is 1024 bytes.  Next, use <code>openssl</code> to encrypt some zeroes, writing the output to the card:</p>
+
+<pre><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &gt; /dev/null
+30736384+0 records in
+30736384+0 records out
+31474057216 bytes (31 GB) copied, 989.076 s, 31.8 MB/s
+tee: /dev/sdb: No space left on device
+</code></pre>
+
+<p>I don’t know why it complains about no space, but the number of bytes written looks correct.</p>
+
+<p>(Change some-password to some other word.)  <code>-nosalt</code> prevents openssl writing a header, which contains the password salt.  Because our encryption key (the <code>some-password</code> above) doesn’t need to be secure, we don’t care about it, and will stop the same stream being output next time.</p>
+
+<p>Now check the result:</p>
+
+<pre><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
+30736384+0 records in
+30736384+0 records out
+31474057216 bytes (31 GB) copied, 367.183 s, 85.7 MB/s
+cmp: EOF on /dev/sdb
+</code></pre>
+
+<p>If it hits the end without complaining about differences, what’s on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/check-for-fake-flash";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2015/07/11/check-for-fake-flash");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Whiteboard robot number crunching</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/07/03/whiteboard-robot-number-crunching/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/03/26/fixing-the-foam-pads-on-a-trackball/">Fixing the foam pads on a trackball</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/08/14/whiteboard-bots-first-drawing/">Whiteboard bot's first drawing</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Whiteboard robot number crunching</h1>
+    <p class="meta">2012-07-03 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I’m thinking of building a robot that suspends a whiteboard marker from two strings, and draws on a whiteboard.  There would be two motors that can change the length of the strings.</p>
+
+<p>I was playing with some calculations for this robot, literally on the back of an envelope.  I need to calculate how long each string will be for a particular coordinate.</p>
+
+<div class="content-image">
+<a href="/images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png">
+<img src="/generated/400-whiteboard-robot-maths-1.png" alt="" srcset="    /generated/400-whiteboard-robot-maths-1.png 400w, /images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png 469w" sizes="400px" />
+</a>
+</div>
+
+<p>Pythagoras’ theorem gives:</p>
+
+<p>$latex l_1^2=x^2+y^2 &amp;s=1$</p>
+
+<p>and</p>
+
+<p>$latex l_1^2=r^2+s^2 &amp;s=1$</p>
+
+<p>If we smash them together, we get:</p>
+
+<p>$latex r^2 + s_1^2 = x^2 + y^2 &amp;s=1$</p>
+
+<p>$latex s_1 = \sqrt{x^2+y^2-r^2} &amp;s=1$</p>
+
+<p>and of course</p>
+
+<p>$latex s_2 = \sqrt{(w-x)^2+y^2-r^2} &amp;s=1$</p>
+
+<p>That was easier than I expected - the maths wasn’t too hard!  This should be enough to draw short segments with linear interpolation.</p>
+
+<p>But, I’d like to know how the string length changes as I draw a straight line.  Imagine a line being drawn perpendicular to the string; when the length of the string gets very long, it should lengthen at the same rate as the line.  This suggests that the string length and the line length forms a hyperbola.</p>
+
+<p>Consider a horizontal line beneath one of the wheels.  Let <em>x</em> be the distance from the closest point on the line to the wheel.  <em>s</em> is the string length.  If the line went through the wheel, the graph</p>
+
+<p>$latex \frac{x}{s}=1 &amp;s=1$</p>
+
+<p>would give the line where the <em>x</em> position is the same as the string length.</p>
+
+<p>If the line does not pass through the wheel, this equation from earlier where <em>r</em> is the wheel radius and <em>y</em> is the shortest distance from the wheel to the line:</p>
+
+<p>$latex s^2 = x^2 + y^2 - r^2 &amp;s=1$</p>
+
+<p>can become</p>
+
+<p>$latex 1 = \frac{x^2 + y^2 - r^2}{s^2} &amp;s=1$</p>
+
+<p>which should produce a hyperbola.  When the string is long enough, <em>y²-r²</em> becomes negligible.</p>
+
+<p>Previously I’ve implemented Bresenham’s algorithm to interpolate values on an AVR; it would be nice to do the same thing to calculate this parabola while drawing a straight line segment.  It turns out <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.19.2194&amp;rep=rep1&amp;type=pdf"> someone has worked out how to use calculations like this for hyperbolae</a>.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/whiteboard-robot-number-crunching";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/07/03/whiteboard-robot-number-crunching");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>How the STM32L Discovery demo works</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/09/20/how-the-stm32l-discovery-demo-works/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">Getting started with an STM32L Discovery with Linux and GCC</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/09/24/blinky-on-the-stm32l-discovery/">Blinky on the STM32L Discovery</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>How the STM32L Discovery demo works</h1>
+    <p class="meta">2012-09-20 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>In <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">my previous post</a>, I got a basic program running on a STM32L Discovery board.  Now I hope to work out what the program works.</p>
+
+<p>The program contained this data structure:</p>
+
+<pre><code>// Define the vector table
+unsigned int *myvectors[4]
+__attribute__ ((section("vectors"))) = {
+    (unsigned int *) STACK_TOP,         // stack pointer
+    (unsigned int *) main,              // code entry point
+    (unsigned int *) nmi_handler,       // NMI handler (not really)
+    (unsigned int *) hardfault_handler  // hard fault handler
+};
+</code></pre>
+
+<p>This is a structure with four pointers.  It also has this in front: <code>__attribute__ ((section("vectors")))</code>.  The linker script contains a section with a similar name, and while I don’t know anything about linker scripts, it looks like it goes right at the start of the flash memory. In other words, these four pointers look like the first 32 bytes of any program.</p>
+
+<p>Is there any documentation that describes this? After suffering through ST’s “product selector”, I found <a href="http://www.st.com/internet/mcu/product/248820.jsp">the page for the CPU</a>, where I found the reference manual. This is a bit like a AVR datasheet; it tells you all about the interfaces the chip has. Since my program doesn’t talk to the outside world yet, this document isn’t terribly helpful; but it does point to <a href="http://infocenter.arm.com/help/topic/com.arm.doc.ddi0337g/DDI0337G_cortex_m3_r2p0_trm.pdf">a document from ARM about the CPU core</a>.</p>
+
+<p>After searching for various terms in this document, I eventually found out that this table is called the “vector table” and is described in section 5.9.1. Although the table in the code is self-explanatory, it’s nice to find the reference to what exactly it does. The document also says there’s other vectors that may appear after these, so that may be useful to know one day.</p>
+
+<p>Now that I’ve started to find my way around the documentation, maybe I can go on to making the chip actually do something!</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/how-the-stm32l-discovery-demo-works";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/09/20/how-the-stm32l-discovery-demo-works");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

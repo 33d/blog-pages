@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>DMA on the STM32L Discovery</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/10/23/dma-on-the-stm32l-discovery/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/10/21/picture-data-using-spi/">Picture data using SPI</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/10/28/video-signal-output-circuitry/">Video signal output circuitry</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>DMA on the STM32L Discovery</h1>
+    <p class="meta">2012-10-23 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>There’s one more part to my video generator - the picture data, which I want to transfer to the SPI port using DMA. This actually looks fairly straightforward, these are the available registers:</p>
+<table>
+<tbody>
+<tr>
+
+<td>MEM2MEM
+</td>
+
+<td>I'm transferring from memory to a peripheral, so this should be off.
+</td>
+</tr>
+<tr>
+
+<td>PL
+</td>
+
+<td>I'll make this "very high" priority, because I want to keep the picture stable at all costs. If a program writes to the framebuffer during this DMA transfer, it will be blocked.
+</td>
+</tr>
+<tr>
+
+<td>MSIZE
+</td>
+
+<td>I've set the SPI port to 8 bits so I'll stick with that. I don't think it will make any difference whether it's 8 or 16.
+</td>
+</tr>
+<tr>
+
+<td>MINC
+</td>
+
+<td>I want the memory pointer to increment during the transfer
+</td>
+</tr>
+<tr>
+
+<td>PINC
+</td>
+
+<td>I guess this should be off, because to write SPI you keep sending data to the same memory location.
+</td>
+</tr>
+<tr>
+
+<td>CIRC
+</td>
+
+<td>I don't want the memory pointer to circle around.
+</td>
+</tr>
+<tr>
+
+<td>DIR
+</td>
+
+<td>Read from memory
+</td>
+</tr>
+<tr>
+
+<td>Interrupts
+</td>
+
+<td>I won't need any yet, but eventually I'll have to turn off the SPI port at the end of the transfer, otherwise I'll get white bars down the sides of the screen.
+</td>
+</tr>
+</tbody>
+</table>
+<p><code>DMA_CNDTRx</code> contains how much data to transfer. There are 7 channels, and table 40 of the reference manual says <code>SPI2_TX</code> is on channel 5. This needs to be set to the number of pixels / 8, since I’ll have 8 pixels in one byte.  There’s a “auto-reload” setting somewhere which resets this counter value after a transfer; I think this happens in circular mode.</p>
+
+<p>Table 40 also suggests I must use DMA1 for these transfers.</p>
+
+<p>The peripheral address register should point to the SPI data register (<code>&amp;(SPI2-&gt;DR)</code>), and the memory register is the start of the current line of pixels.</p>
+
+<p>That’s all of the available settings!  There’s one more thing to do though: section 10.3.7 says this:</p>
+
+<blockquote>The peripheral DMA requests can be independently activated/de-activated by programming the DMA control bit in the registers of the corresponding peripheral.</blockquote>
+
+<p>I guess this is the <code>TXDMAEN</code> bit in the <code>SPI_CR2</code> register.</p>
+
+<p>Now for some code… first I’ll make some data to send:</p>
+
+<pre><code>const uint8_t image[] = { 0xAA, 0x55, 0xAA, 0x55 };
+</code></pre>
+
+<p>Of course later on I’ll have a lot more data…</p>
+
+<p>Now to set the above settings:</p>
+
+<pre><code>  DMA1_Channel5-&gt;CCR = DMA_CCR5_PL // very high priority
+          | DMA_CCR5_MINC  // memory increment mode
+          | DMA_CCR5_DIR;  // read from memory, not peripheral
+</code></pre>
+
+<p>Section 10.3.3 has this useful bit of information:</p>
+
+<blockquote>The first transfer address is the one programmed in the DMA_CPARx/DMA_CMARx registers. During transfer operations, these registers keep the initially programmed value. The current transfer addresses (in the current internal peripheral/memory address register) are not accessible by software.</blockquote>
+
+<p>This suggests that I only need to set these at the start and shouldn’t need to touch them again.</p>
+
+<p>To set these:</p>
+
+<pre><code>  DMA1_Channel5-&gt;CMAR = (uint32_t) image;       // where to read from
+  DMA1_Channel5-&gt;CPAR = (uint32_t) &amp;(SPI2-&gt;DR); // where to write to
+</code></pre>
+
+<p>Time to try it out… and… nothing!  Maybe there’s another clock setting for DMA, and sure enough there is:</p>
+
+<pre><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
+</code></pre>
+
+<p>I still haven’t got anything, so I tried setting the source and destination registers each time before I start a DMA transfer. It looks like now I get a single transfer, but I’m trying to get a transfer on every hsync.</p>
+
+<p>I poked around with the debugger, especially at <code>0x40026058</code> which is <code>DMA5-&gt;CCR1</code> (I calculated the address from values in stm32l1xx.h), and noticed that the Enable flag is still set.  Maybe it has to be toggled each time?  Now I get a square wave instead of my data… I then tried decreasing my hsync timer, and decreasing the SPI speed, and I got a reasonable output.  I’m getting some nasty aliasing on my DSO Nano though, maybe I should have borrowed a faster scope!  I think I was triggering the DMA transfers too quickly, which produced that square wave.  Conveniently, I notice the SPI line is now low when it’s idle, which is the output I want.  I’m not sure why it’s gone low, but I’m not complaining.</p>
+
+<p>So to sum up:</p>
+
+<pre><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
+  // Configure DMA
+  DMA1_Channel5-&gt;CCR = DMA_CCR5_PL // very high priority
+          | DMA_CCR5_MINC  // memory increment mode
+          | DMA_CCR5_DIR;  // read from memory, not peripheral
+  DMA1_Channel5-&gt;CMAR = (uint32_t) image;       // where to read from
+  DMA1_Channel5-&gt;CPAR = (uint32_t) &amp;(SPI2-&gt;DR); // where to write to
+...
+  SPI2-&gt;CR2 = SPI_CR2_SSOE | SPI_CR2_TXDMAEN;
+</code></pre>
+
+<p>then in my hsync handler:</p>
+
+<pre><code>    // Activate the DMA transfer
+    DMA1_Channel5-&gt;CCR &amp;= ~DMA_CCR5_EN;
+    DMA1_Channel5-&gt;CNDTR = sizeof(image);
+    DMA1_Channel5-&gt;CCR |= DMA_CCR5_EN;
+</code></pre>
+
+<p>I didn’t need to reset <code>CMAR</code> and <code>CPAR</code> after all.</p>
+
+<p>I think that’s now demonstrated everything I need for the video signal generator! My code needs a big cleanup, and I’d like to use ChibiOS functions where I can (<code>palSetPadMode</code> instead of messing around with memory locations and data structures, etc).</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/dma-on-the-stm32l-discovery";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/10/23/dma-on-the-stm32l-discovery");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

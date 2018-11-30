@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Sub 50 cent microcontrollers</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2018/10/24/sub-50c-microcontrollers/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2018/09/13/brushed-bustophedon-esc-schematic/">Schematic for the "Bustodephon" brushed motor electronic speed controller (ESC)</a></p>
+    <p class="post-nav-newer"><a href="/posts/2018/11/28/lirc-ubuntu-bionic/">Serial LIRC devices on recent Ubuntu releases</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Sub 50 cent microcontrollers</h1>
+    <p class="meta">2018-10-24</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p><a href="https://jaycarlson.net/microcontrollers/">$1 microcontrollers</a>, pfft.  What useful ones are around for under 50 cents?</p>
+
+<p>The qualifications:</p>
+
+<ul>
+  <li>There needs to be adequate documentation</li>
+  <li>Programmamble with readly available (and cheap) hardware.  This rules out a lot of ones from Megawin, Sinowealth and so on; while they have reasonable user manuals, there’s no information on how to program them, short of buying a $20 programmer.</li>
+  <li>Are readily available.  I ruled out parts only available from Taobao, for instance.</li>
+</ul>
+
+<p>I was left with these:</p>
+
+<ul>
+  <li>The STM8S103.  They’re not <em>the</em> cheapest, but are readily available in the West.  There’s a cheaper STM8S003, but its flash is rated to only 100 writes, so it sounds like the idea is to develop for the S103 first.</li>
+  <li>The Nuvoton N76E003.  It has loads of peripherals, and is pin compatible with the STM8S103.</li>
+  <li>The STC microcontrollers.  Not quite as much bang for buck as the Nuvoton, and unavailable in the West, but come in 8 pin packages.</li>
+</ul>
+
+<p>The Atmel ATtiny13 also qualifies, but I already know how to program those!</p>
+
+<p>All should be programmable using <a href="http://sdcc.sourceforge.net/">SDCC</a>, and either a ST-Link or USB-Serial dongle.  I’ve purchased development boards for the <a href="https://www.aliexpress.com/item/STM8S103F3P6-System-Board-STM8S-STM8-Development-Board-Minimum-Core-Board/32885918852.html">STM8</a>, <a href="https://www.aliexpress.com/item/51-Development-Board-N76E003AT20-Development-Board-System-Board-Core-Board-N76E003/32898770085.html">Nuvoton</a> and a <a href="https://www.aliexpress.com/item/STC15W204S-SCM-Minimum-System-Board-Development-Board-51-SOP8-STC15F104E/32899351974.html">STC15W204</a>.  I hope to try these out and write about them.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/sub-50c-microcontrollers";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2018/10/24/sub-50c-microcontrollers");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

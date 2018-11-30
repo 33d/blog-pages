@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Download the packages for an offline Ubuntu upgrade</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2010/06/12/download-the-packages-for-an-offline-ubuntu-upgrade/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/05/22/changing-8-pins-at-a-time-with-the-arduino-environment/">Changing 8 pins at a time with the Arduino environment</a></p>
+    <p class="post-nav-newer"><a href="/posts/2010/07/04/find-the-progress-of-a-command/">Find the progress of a command</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Download the packages for an offline Ubuntu upgrade</h1>
+    <p class="meta">2010-06-12 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Well, not really offline since you’ll still have to download some files, but not all of the packages.  Use this for computers with limited internet quota.  I’m sure this could be done in a single script with some awk-fu.</p>
+
+<ol>
+  <li>Produce a list of your current package selections:</li>
+</ol>
+
+<pre><code>dpkg --get-selections | awk '{ print $1 }' &gt; selections
+</code></pre>
+
+<ol>
+  <li>Get the package lists:</li>
+</ol>
+
+<pre><code>for s in lucid/main lucid/multiverse lucid/restricted lucid/universe \
+        lucid-updates/main lucid-updates/multiverse \
+        lucid-updates/restricted lucid-updates/universe ; do \
+    wget -c "http://archive.ubuntu.com/ubuntu/dists/$s/binary-i386/Packages.bz2" \
+        -O Packages_${s/\//_}.bz2 ; \
+done
+</code></pre>
+
+<p>This grabs the package lists in filenames like this:</p>
+
+<pre><code>Packages_lucid-updates_restricted.bz2
+</code></pre>
+
+<ol>
+  <li>Extract the filenames from these package lists:</li>
+</ol>
+
+<pre><code>for f in Packages*.bz2 ; do bzcat $f | awk '
+/^Package/ { package=$2 } 
+/^Filename/ { print package "\t" $2 } 
+' &gt; ${f%%.bz2}.filenames ; done
+</code></pre>
+
+<ol>
+  <li>Produce a list of all filenames, making sure the updates get precedence over the other ones:</li>
+</ol>
+
+<pre><code>cat `ls -1 Package*.filenames | sort` | awk '
+{ files[$1] = $2 }
+END {
+  for (p in files) print p "\t" files[p]
+}' | sort &gt; all.filenames
+</code></pre>
+
+<ol>
+  <li>Produce a script of your selections:</li>
+</ol>
+
+<pre><code>awk '
+BEGIN { while (getline &lt; "all.filenames" != 0) filenames[$1] = $2 }
+{ if ($1 in filenames) print "wget -c http://archive.ubuntu.com/ubuntu/" filenames[$1] }
+'  &lt; selections &gt; downloads
+</code></pre>
+
+<ol>
+  <li>Take the file <code>downloads</code> to another computer, and run it:</li>
+</ol>
+
+<pre><code>sh downloads
+</code></pre>
+
+<ol>
+  <li>Take the downloaded files back to the offline computer, copy the files to <code>/var/cache/apt/archives</code>, then <code>do-release-upgrade</code>.</li>
+</ol>
+
+<p>You could probably save more quota by renaming the Package files and copying them to <code>/var/lib/apt/lists</code>.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/download-the-packages-for-an-offline-ubuntu-upgrade";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2010/06/12/download-the-packages-for-an-offline-ubuntu-upgrade");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

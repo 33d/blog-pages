@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Using ST's libraries with the STM32L Discovery</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/09/27/using-sts-libraries-with-the-stm32l-discovery/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/09/24/blinky-on-the-stm32l-discovery/">Blinky on the STM32L Discovery</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/10/01/chibios-on-the-stm32l-discovery/">ChibiOS on the STM32L Discovery</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Using ST's libraries with the STM32L Discovery</h1>
+    <p class="meta">2012-09-27 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Now that I’ve got the LED to light by <a href="http://sourcegate.wordpress.com/2012/09/24/blinky-on-the-stm32l-discovery/">accessing the registers directly</a>, I’ll try again this time using ST’s libraries.  ST calls this the “standard peripheral library”, and can be downloaded from the <a href="http://www.st.com/internet/mcu/product/248820.jsp#FIRMWARE">CPU page</a>.</p>
+
+<p>Their license isn’t the nicest, but it should be fine for any development for this board.  It essentially says that it can only be used for software designed for this chip.  This seems pretty stupid to me, what else is it going to be used for?  Maybe ST’s law department is like the guy who changes speed limits on roads; making random changes to keep their jobs. (Rant ends here.)</p>
+
+<p>Unzip this somewhere.  The more interesting stuff looks like it’s in the directory <code>STM32L1xx_StdPeriph_Lib_V1.1.1/Libraries/STM32L1xx_StdPeriph_Driver/src/</code>. Let’s build something in here:</p>
+
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c stm32l1xx_gpio.c&lt;/strong&gt;
+stm32l1xx_gpio.c:76:28: fatal error: stm32l1xx_gpio.h: No such file or directory
+compilation terminated.
+</code></pre>
+
+<p>Let’s tell the compiler where the headers are:</p>
+
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc stm32l1xx_gpio.c&lt;/strong&gt; 
+In file included from stm32l1xx_gpio.c:76:0:
+../inc/stm32l1xx_gpio.h:38:23: fatal error: stm32l1xx.h: No such file or directory
+compilation terminated.
+</code></pre>
+
+<p>Still no good…</p>
+
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ stm32l1xx_gpio.c&lt;/strong&gt;
+In file included from ../inc/stm32l1xx_gpio.h:38:0,
+                 from stm32l1xx_gpio.c:76:
+../../CMSIS/Device/ST/STM32L1xx/Include/stm32l1xx.h:266:22: fatal error: core_cm3.h: No such file or directory
+compilation terminated.
+</code></pre>
+
+<p>and another one:</p>
+
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ -I../../CMSIS/Include stm32l1xx_gpio.c
+&lt;/strong&gt;
+</code></pre>
+
+<p>At last!</p>
+
+<p>This can be added to a Makefile, to compile all of the libraries.</p>
+
+<p>Previously I used this ghastly code to turn on the LED:</p>
+
+<pre><code>  *((uint32_t*) 0x4002381C) = 0x00000002; /* Enable GPIO clock */
+  *((uint32_t*) 0x40020400) = 0x00005000; /* Output mode */
+  *((uint32_t*) 0x40020408) = 0x00005000; /* 2MHz clock speed */
+  *((uint32_t*) 0x40020418) = 0x00000080; /* LED on */
+</code></pre>
+
+<p>Using the ST code, this now looks like:</p>
+
+<pre><code>    RCC-&gt;AHBENR |=  (1UL &lt;&lt;  1);        /* Enable GPIOB clock         */     GPIOB-&gt;MODER   |=   (0x00005000);   /* General purpose output mode*/
+    GPIOB-&gt;OSPEEDR |=   (0x00005000);   /* 2 MHz Low speed            */
+    GPIOB-&gt;BSRRL = 1L &lt;&lt; 7;             /* LED on */
+</code></pre>
+
+<p>This include needs to be added at the top:</p>
+
+<pre><code>#include &lt;stm32l1xx.h&gt;
+</code></pre>
+
+<p>This needs to be compiled with the headers from the SPL, and linked with the compiled SPL.</p>
+
+<p>I’ve <a href="https://docs.google.com/open?id=0B4_b067bayWtcE1xNUVLaUJyUnM">linked my C code so far and makefiles to build the SPL and the final binary</a>.</p>
+
+<p><a href="http://sourcegate.wordpress.com/2012/10/01/chibios-on-the-stm32l-discovery/">Next I’ll try controlling the LED using ChibiOS</a>.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/using-sts-libraries-with-the-stm32l-discovery";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/09/27/using-sts-libraries-with-the-stm32l-discovery");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

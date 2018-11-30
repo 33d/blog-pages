@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Laser printer mirror hacking</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2011/11/21/laser-printer-mirror-hacking/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/07/04/repartitioning-an-hp-pavilion-dm1/">Repartitioning a computer with four primary partitions</a></p>
+    <p class="post-nav-newer"><a href="/posts/2011/12/11/how-an-electric-kettle-knows-when-the-water-is-boiling/">How an electric kettle knows when the water is boiling</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Laser printer mirror hacking</h1>
+    <p class="meta">2011-11-21 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I pulled the mirror out of a laster pinter, and I had a go making it work.</p>
+
+<div class="content-image">
+<a href="/images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg">
+<img src="/generated/400-printer_mirror_circuit.jpg" alt="" srcset="    /generated/400-printer_mirror_circuit.jpg 400w, /images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg 1041w" sizes="400px" />
+</a>
+</div>
+
+<p>I’d seen an article before that does this, but I <a href="http://www.google.com/url?sa=t&amp;rct=j&amp;q=lb11872&amp;source=web&amp;cd=1&amp;ved=0CBsQFjAA&amp;url=http%3A%2F%2Fwww.alldatasheet.com%2Fview.jsp%3FSearchword%3DLB11872-SOP&amp;ei=Ph_KTvPjM8OaiQf0k_DeDw&amp;usg=AFQjCNEoIPeeMnwf_LmETZxn0WEhLxJbsg&amp;cad=rja">had a datasheet for the driver chip</a>.  Conveniently all of the pins I needed had test points on the board - that saves me having to attach something to the original plug.</p>
+
+<div class="content-image">
+<a href="/images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg">
+<img src="/" alt="" srcset=" /images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg 221w" sizes="400px" />
+</a>
+</div>
+
+<p>It was pretty easy to drive - apply 12V, put a square wave on CLK and pull SS low.  The datasheet says that 5V is fine for the clock signal.  Apparently LD changes state once the mirror is up to speed.  The laster started spinning at 50Hz, but ran a bit rough below 500Hz.  It didn’t get any faster once the signal was at 5kHz.</p>
+
+<p>To test out the relationship between the mirror and the clock signal, I made an Arduino flash a light 6 times for each clock pulse.  I saw 6 reflections in the mirror, so I guess the mirror spins 1/6 of a resolution for each clock pulse.</p>
+
+<p>I tried running it at 5V, but I had no luck there.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/laser-printer-mirror-hacking";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2011/11/21/laser-printer-mirror-hacking");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

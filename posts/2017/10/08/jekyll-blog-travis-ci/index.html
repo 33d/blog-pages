@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Build a Jekyll blog with Travis CI without granting write access</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2017/10/08/jekyll-blog-travis-ci/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2015/07/11/check-for-fake-flash/">Check that your flash memory isn't fake</a></p>
+    <p class="post-nav-newer"><a href="/posts/2017/10/22/flysky-ibus-protocol/">The FlySky iBus protocol</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Build a Jekyll blog with Travis CI without granting write access</h1>
+    <p class="meta">2017-10-08</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>With the demise of Openshift Online and its free tier, I was looking for somewhere else to host my blog.  Even though it’s a <a href="https://jekyllrb.com/">Jekyll</a> blog, it does some image resizing, so I can’t use Github’s native builder.  I should be able to use <a href="https://travis-ci.org/">Travis CI</a> though, then push them to another Github repository for <a href="https://help.github.com/categories/github-pages-basics/">Pages</a> hosting.</p>
+
+<p>The <a href="https://docs.travis-ci.com/user/deployment/pages/">Travis instructions for Github Pages</a> instructions suggest you use Github personal access tokens for authentication, but that seems to give write access to all of my Github repositories - which I don’t want to do.</p>
+
+<p>You will need the <a href="https://github.com/travis-ci/travis.rb">command line client</a> installed and logged in.</p>
+
+<ol>
+  <li>
+    <p>Generate a key pair for Travis to use when pushing</p>
+
+    <pre><code> ssh-keygen -t rsa -b 4096 -f travis-key
+</code></pre>
+
+    <p>Don’t commit the generated files!</p>
+  </li>
+  <li>
+    <p>Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in <code>travis-key.pub</code> which you generated in the previous step, check “Enable write access”, then add the key.</p>
+  </li>
+  <li>
+    <p>The private key should be <a href="https://docs.travis-ci.com/user/encrypting-files/">encrypted</a>.  From the blog repository:</p>
+
+    <pre><code> travis encrypt-file -r 33d/blog travis-key
+</code></pre>
+
+    <p>where <code>travis-key</code> is one of the files created earlier by <code>ssh-keygen</code>.</p>
+
+    <p>This command will suggest you add a line to your <code>before_install</code> section - do that.</p>
+  </li>
+  <li>
+    <p>Put at the end of <code>.travis.yml</code>’s <code>before_install</code>, to stop <code>ssh-add</code> complaining about the key’s permissions:</p>
+
+    <pre><code> - chmod 400 ../travis-key
+</code></pre>
+  </li>
+  <li>
+    <p>Add this to <code>.travis.yml</code>, to perform the Git push:</p>
+
+    <p><code>
+ after_success:
+  - eval "$(ssh-agent -s)"
+  - ssh-add ../travis-key
+  - git clone git@github.com:33d/blog-pages.git target
+  - cp -pr _site/* target
+  - git -C target checkout -b gh-pages
+  - git -C target add .
+  - git -C target commit -m "$( date --utc --iso-8601=seconds )"
+  - git -C target push --force origin gh-pages
+</code></p>
+
+    <p>I use a different repository for this, because I don’t want the build artifacts clogging the blog repository.</p>
+  </li>
+</ol>
+
+<p>You can see <a href="https://github.com/33d/blog/blob/blog/.travis.yml">my completed <code>.travis.yml</code> file</a>.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/jekyll-blog-travis-ci";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2017/10/08/jekyll-blog-travis-ci");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

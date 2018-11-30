@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Code to produce video signals on the STM32L Discovery</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2012/11/04/code-to-produce-video-signals-on-the-stm32l-discovery/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2012/10/28/video-signal-output-circuitry/">Video signal output circuitry</a></p>
+    <p class="post-nav-newer"><a href="/posts/2012/12/06/frickin-lasers/">Frickin' lasers</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Code to produce video signals on the STM32L Discovery</h1>
+    <p class="meta">2012-11-04 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I’ve finally coded the program that produces a video signal.  There weren’t too many surprises.</p>
+
+<p>One issue I had was that there was that occasionally a line would be drawn slightly to the right.  I changed the interrupt priority from 7 to 0, and disabled ChibiOS’ thread preemption. Probably only changing the interrupt will do, but I had no trouble after that.</p>
+
+<p>A bigger problem is that any vertical line wriggles around on the screen a lot.  I don’t think there’s anything in my code that might cause this.  I came across a question on the STM site, which <a href="https://my.st.com/public/FAQ/Lists/faqlist/DispForm.aspx?ID=143&amp;level=1&amp;objectid=141&amp;type=product&amp;Source=/public/FAQ/Tags.aspx?tags=interrupt">suggests that an instruction must complete before an interrupt will be triggered</a>.  If the CPU happens to be running a long instruction, the line produced by the following interrupt will be shifted over slightly.  The <a href="http://code.google.com/p/arduino-tvout/">Arduino TV-Out library</a> doesn’t have this problem, even though the AVRs instructions can take different amounts of time.  I’m not sure what I can do about this - the timer should still be correct, so maybe I’d need a busy-wait loop while waiting for the timer to hit a particular value.  It looks like the TV-Out library does this.  It might need some assembler, which I don’t plan to learn right now (but maybe check <a href="https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=%2Fpublic%2FSTe2ecommunities%2Fmcu%2FLists%2Fcortex_mx_stm32%2Fcompensating%20latencies%20on%20STM32F4%20interrupts&amp;FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&amp;currentviews=150">this ST forum post</a>).  But the <a href="http://rossum.posterous.com/20131601">author of the RBox suggests it’s because of the wait states</a>.  I don’t know why there would be anything non-deterministic with wait states, unless there was caching involved, which I don’t think the STM32 has.  I suspect it’s ChibiOS running stuff during the timing interrupt, which would cause jitter.</p>
+
+<div class="content-image">
+<a href="/images/wp/2012-11-04-code-to-produce-video-signals-on-the-stm32l-discovery/stm32-video-squiggly-lines.jpg">
+<img src="/generated/400-stm32-video-squiggly-lines.jpg" alt="" srcset="    /generated/400-stm32-video-squiggly-lines.jpg 400w, /images/wp/2012-11-04-code-to-produce-video-signals-on-the-stm32l-discovery/stm32-video-squiggly-lines.jpg 1280w" sizes="400px" />
+</a>
+</div>
+
+<p>I don’t plan to do any more work on this program, since it’s served its task of teaching me about ARM processors.  It has potential to show data its capturing or interacting with an operator.  There’s plenty of memory for a framebuffer for its its 400×288 display, It should be fairly easy to port the TVOut library to it, to add graphics and text rendering capabilities.  The advantage of the ARM chip is that because it uses DMA to write to the screen, the CPU is doing almost nothing while it’s displaying an image.  An AVR needs to work hard while a line is being drawn.</p>
+
+<p>I’ve seen one project where <a href="http://rossum.posterous.com/20131601">an ARM chip produced colour signals</a>.  The CPU didn’t have DMA though, but was faster than the STM32L.  The <a href="http://www.freescale.com/webapp/sps/site/prod_summary.jsp?code=FRDM-KL25Z">Freescale Freedom board</a> looks like a good target (although ChibiOS doesn’t support it yet).  I was thinking about the way that 2D polygons are drawn, and I think it might be possible to render a number of 3D polygons with occlusion as each line is being drawn.  The unusual part of this rendering is that instead of the frame rate slowing when the CPU was busy, the vertical resolution would decrease instead as the previous line keeps getting rendered as a new line is being drawn.</p>
+
+<p>Generating video signals like is is nifty, but maybe a bit pointless since there are chips around with composite output anyway.  The <a href="https://www.olimex.com/Products/OLinuXino/iMX233">OLinuXino iMX233</a> would be ideal for this, as <a href="http://www.freescale.com/webapp/sps/site/prod_summary.jsp?code=i.MX233">its CPU</a> has <a href="http://cache.freescale.com/files/dsp/doc/ref_manual/IMX23RM.pdf">a complete reference manual</a> available.  It’s designed for running Linux, but some low level programming like I did here would provide an “instant-on” function.  The same could be done with the <a href="http://www.raspberrypi.org/wp-content/uploads/2012/02/BCM2835-ARM-Peripherals.pdf">Raspberry Pi</a>, but since there’s no user manual available, you’d need to rely on <a href="http://www.raspberrypi.org/wp-content/uploads/2012/02/BCM2835-ARM-Peripherals.pdf">its limited documentation</a> and Linux drivers.  I like the idea of porting the <a href="http://www.rtems.org/">RTEMS</a> operating system to the OLinuXino, since that OS provides a POSIX API and BSD networking, so porting other applications would be easier.</p>
+
+<p><a href="http://tinypic.com/r/j6j51k/6">Here’s a video of my results</a>.  My code is here: <a href="https://github.com/33d/stm32-video">https://github.com/33d/stm32-video</a></p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/code-to-produce-video-signals-on-the-stm32l-discovery";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2012/11/04/code-to-produce-video-signals-on-the-stm32l-discovery");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

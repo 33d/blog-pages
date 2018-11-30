@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Save space used by an Ubuntu VM by using the live CD, the slightly easier way</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2015/04/21/save-space-used-by-an-ubuntu-vm/">Save space used by an Ubuntu VM by using the live CD</a></p>
+    <p class="post-nav-newer"><a href="/posts/2015/07/11/check-for-fake-flash/">Check that your flash memory isn't fake</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Save space used by an Ubuntu VM by using the live CD, the slightly easier way</h1>
+    <p class="meta">2015-04-22</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>Yesterday I worked out how to use the Ubuntu live CD to save space on Ubuntu VMs.  It turns out you don’t need to change <code>initrd.lz</code>.</p>
+
+<p>Instead, all of the options in <code>casper.conf</code> except <code>root_persistence</code> can be specified on the kernel command line - simply add them (without the quotes) to <code>extlinux.conf</code>.</p>
+
+<ol>
+  <li>Create a virtual machine with a hard disk of your choosing.  Boot the Ubuntu live CD in it.</li>
+  <li>Create a partition on the virtual hard disk for persistence, and make it bootable.</li>
+  <li>
+    <p>Format it, give it a label:</p>
+
+    <pre><code>$ sudo bash
+# mkfs.ext2 /dev/sda1 -L overlay
+</code></pre>
+  </li>
+  <li>
+
+    <pre><code># mount /dev/sda1 /mnt
+</code></pre>
+  </li>
+  <li>
+
+    <pre><code># mkdir /mnt/boot
+</code></pre>
+  </li>
+  <li>
+
+    <pre><code># cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
+</code></pre>
+  </li>
+  <li>
+    <p>We need to <a href="https://wiki.ubuntu.com/CustomizeLiveInitrd">edit <code>/etc/casper.conf</code> inside the initrd</a>:</p>
+
+    <pre><code># cd /tmp
+# mkdir i
+# cd i
+# lzcat /cdrom/casper/initrd.lz | cpio -i
+</code></pre>
+
+    <p>now put in /tmp/i/etc/casper.conf (I found out the variables by looking through <a href="http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper"><code>/usr/share/initramfs-tools/scripts/casper</code></a>, which is run by the kernel command line’s <code>boot</code> parameter.):</p>
+
+    <pre><code># This file should go in /etc/casper.conf
+# Supported variables are:
+# USERNAME, USERFULLNAME, HOST, BUILD_SYSTEM, FLAVOUR
+    
+export USERNAME="user"
+export USERFULLNAME="Live session user"
+export HOST="vm"
+export BUILD_SYSTEM="Ubuntu"
+    
+# USERNAME and HOSTNAME as specified above won't be honoured and will be set to
+# flavour string acquired at boot time, unless you set FLAVOUR to any
+# non-empty string.
+    
+export FLAVOUR="Ubuntu"
+    
+export PERSISTENT="Yes"
+export root_persistence="overlay"
+</code></pre>
+
+    <p>You can customize your username and host name in this file too.  Note <code>root_persistence</code> is the label we specified in step 3.  Now compress the initramfs:</p>
+
+    <pre><code># cd /tmp/i
+# find . | cpio --quiet --dereference -o -H newc | lzma -7 &gt; /mnt/boot/initrd.lz
+</code></pre>
+  </li>
+  <li>
+    <p>Now for a bootloader which uses the above stuff.  Install the extlinux package.  I grabbed the .deb <a href="http://packages.ubuntu.com/trusty/extlinux">from the package search</a>.</p>
+  </li>
+  <li>
+    <p>Install extlinux:</p>
+
+    <pre><code># mkdir /mnt/boot/extlinux
+# extlinux -i /mnt/boot/extlinux
+</code></pre>
+
+    <p>Put this in <code>/mnt/boot/extlinux/extlinux.conf</code>:</p>
+
+    <pre><code>DEFAULT linux
+    
+LABEL linux
+KERNEL /boot/vmlinuz.efi
+APPEND boot=casper initrd=/boot/initrd.lz noprompt
+</code></pre>
+  </li>
+  <li>
+    <p>The hard disk is probably missing a master boot record.</p>
+
+    <pre><code># dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
+</code></pre>
+  </li>
+  <li>Unmount <code>/mnt</code> and reboot.</li>
+</ol>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/save-space-used-by-an-ubuntu-vm-mk-ii";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

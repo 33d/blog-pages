@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Find the progress of a command</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2010/07/04/find-the-progress-of-a-command/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2010/06/12/download-the-packages-for-an-offline-ubuntu-upgrade/">Download the packages for an offline Ubuntu upgrade</a></p>
+    <p class="post-nav-newer"><a href="/posts/2010/07/04/repartitioning-an-hp-pavilion-dm1/">Repartitioning a computer with four primary partitions</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Find the progress of a command</h1>
+    <p class="meta">2010-07-04 • sourcegate</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>If you’re running some command that takes a while, perhaps compressing a large file, you often want to know how far along it is.  This is when the <code>/proc/_pid_/io</code> file is useful.</p>
+
+<p>I might have a <code>bzip2</code> process running with PID 3722, so <code>/proc/3722/io</code> might look like this:</p>
+
+<pre><code>rchar: 1791093411
+wchar: 224891624
+syscr: 1308428
+syscw: 2992919
+read_bytes: 250478592
+write_bytes: 183074816
+cancelled_write_bytes: 0
+</code></pre>
+
+<p>The most useful are “rchar” and “wchar” - the number of bytes read and written by this process.</p>
+
+<p>The <a href="http://kernel.org/doc/Documentation/filesystems/proc.txt">kernel documentation</a> tells you more about this file.</p>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/find-the-progress-of-a-command";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2010/07/04/find-the-progress-of-a-command");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
