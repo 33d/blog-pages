@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Cyber FastTrack 2020 Forensics RH01 challenge</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2020/03/28/cyber-fasttrack-spring-2020-rh01/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2020/03/27/cyber-fasttrack-spring-2020-fh05/">Cyber FastTrack 2020 Forensics HF05 challenge</a></p>
+    <p class="post-nav-newer">&nbsp;</p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Cyber FastTrack 2020 Forensics RH01 challenge</h1>
+    <p class="meta">2020-03-28</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>This is the RH01 challenge from Cyber FastTrack Spring 2020.</p>
+
+<blockquote>
+  <p>We received this file, our analysts believe it is too random to be solved. Can you do anything with this?</p>
+</blockquote>
+
+<p>the target file:</p>
+
+<p><code>
+2b991035290d99b2fbf37fb54320ad6ce84b136d  rh01.zip
+</code></p>
+
+<p>The program asks for three numbers, then produces a message that the numbers were wrong.</p>
+
+<p>I haven’t done much reverse engineering before, but knew about Ghidra, and blundered by way into opening the binary in that, searching for the last message, then looking at the routine which produces it.  When you look at a routine in Ghidra, it shows a psuedo-C implementation of it, so I could see what was going on:</p>
+
+<p><code>
+  FUN_000108a1("I\'m thinking of three random numbers, guess which three:");
+  local_44 = 0;
+  while (local_44 &lt; 3) {
+    printf("\nnumber %d:",local_44 + 1);
+    __isoc99_scanf(&amp;DAT_00010c21,local_20 + local_44 * 4);
+    local_44 = local_44 + 1;
+  }
+  uVar2 = memcmp(&amp;local_2c,local_20,0xc);
+  iVar3 = memcmp(&amp;local_2c,local_20,0xc);
+  if (iVar3 != 0) {
+    printf("\nI was actually thinking of %d, %d and %d.\n",local_2c,local_28,local_24);
+                    /* WARNING: Subroutine does not return */
+    exit(0);
+  }
+  FUN_0001070d(uVar2,uVar2);
+  uVar2 = 0;
+  if (local_14 != *(int *)(in_GS_OFFSET + 0x14)) {
+    uVar2 = FUN_00010b40();
+  }
+  return uVar2;
+</code></p>
+
+<p>What I think is going on:</p>
+
+<ul>
+  <li>Three numbers are typed in, they’re stored as 4 bytes each after <code>local_20</code>.  (It looks like the number is some local variable offset, perhaps relative to the stack pointer when the function is running.)</li>
+  <li>12 bytes are compared - those from the numbers typed in, to another 12 bytes where the first 4 is a number produced by <code>rand()</code>, but I don’t know what’s in the other 8 bytes.</li>
+  <li>The result of memcmp - which should be 0 if the numbers are correct - are passed to another function.</li>
+</ul>
+
+<p>A good start is to simply replace the branch with one which doesn’t exit.  When I put the cursor on the comparison, I see a <code>JNZ</code> (jump if not zero) instruction.  I used a hex editor to replace it (<code>75 24</code>) with a JZ (jump if zero) instruction (<code>74 24</code>).</p>
+
+<p>This seems to have worked, but now displays some garbage after typing the numbers in.  I suspect the flag is unscrambled using some of the numbers, by that last function.  But if the number comparison succeeds, the <code>memcmp</code>s will return 0, which are passed to that function.  How can I change this?</p>
+
+<p>The function call looks like:</p>
+
+<p><code>
+        00010a73 ff 75 d4        PUSH       dword ptr [EBP + local_34]
+        00010a76 ff 75 d8        PUSH       dword ptr [EBP + local_30]
+        00010a79 e8 8f fc        CALL       FUN_0001070d
+</code></p>
+
+<p>Two local numbers are pushed on to the stack, then the function is called.  Perhaps I can put zeroes on the stack instead.</p>
+
+<p>First I need the instructions for this.  Can <code>nasm</code> easily do this, or does it require sections and other stuff I don’t know much about?  Let’s see what happens:</p>
+
+<p><code>
+$ echo 'push 0' &gt; zero.asm
+$ nasm -o zero zero.asm
+$ hd zero
+00000000  6a 00                                             |j.|
+</code></p>
+
+<p>If I look at <a href="http://sparksandflames.com/files/x86InstructionChart.html">a x86 opcode table</a>, 6a is indeed <code>PUSH</code>.</p>
+
+<p>There original pushes were 6 bytes, now there are 4; something needs to fill the last two bytes.  NOPs will do, which is the value 90.</p>
+
+<p>So I’ll replace:</p>
+
+<p><code>
+ff 75 d4 ff 75 d8
+</code></p>
+
+<p>with</p>
+
+<p><code>
+6a 00 6a 00 90 90
+</code></p>
+
+<p>and see what happens:</p>
+
+<p>```
+$ ./RH01
+I’m thinking of three random numbers, guess which three:
+number 1:1</p>
+
+<p>number 2:1</p>
+
+<p>number 3:1
+Wait, how did you do that? I thought I was totally random…
+Flag: Sow_The_Seeds_Of_Doubt
+```</p>
+
+<p>Not bad for a first effort!</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/cyber-fasttrack-spring-2020-rh01";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2020/03/28/cyber-fasttrack-spring-2020-rh01");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

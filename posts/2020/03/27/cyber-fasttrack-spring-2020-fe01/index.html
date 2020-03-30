@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Cyber FastTrack 2020 Forensics FE01 challenge</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2020/03/27/cyber-fasttrack-spring-2020-fe01/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2018/11/28/lirc-ubuntu-bionic/">Serial LIRC devices on recent Ubuntu releases</a></p>
+    <p class="post-nav-newer"><a href="/posts/2020/03/27/cyber-fasttrack-spring-2020-fh05/">Cyber FastTrack 2020 Forensics HF05 challenge</a></p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>Cyber FastTrack 2020 Forensics FE01 challenge</h1>
+    <p class="meta">2020-03-27</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>This is a challenge from Cyber FastTrack Spring 2020, using the same image as FH05.</p>
+
+<blockquote>
+  <p>Take a look at the memory image provided and see if you can see what was written on Notepad while it was open on the user’s screen.</p>
+</blockquote>
+
+<p>A good place to start might be to look at the memory for notepad?</p>
+
+<p><code>
+$ vol pslist
+Volatility Foundation Volatility Framework 2.6
+Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wow64 Start                          Exit                          
+------------------ -------------------- ------ ------ ------ -------- ------ ------ ------------------------------ ------------------------------
+...
+0xfffffa8002642610 notepad.exe            2740    612      1       57      1      0 2019-09-05 15:33:20 UTC+0000 
+</code></p>
+
+<p>I’ll start by dumping the memory:</p>
+
+<p><code>
+$ mkdir dump
+ vol procdump -D dump/ -p 2740
+Volatility Foundation Volatility Framework 2.6
+Process(V)         ImageBase          Name                 Result
+------------------ ------------------ -------------------- ------
+0xfffffa8002642610 0x00000000ff410000 notepad.exe          OK: executable.2740.exe
+$ xxd dump/executable.2740.exe |less
+$ ls -al dump/executable.2740.exe 
+-rw-r--r-- 1 kali kali 193536 Mar 26 16:48 dump/executable.2740.exe
+</code></p>
+
+<p>Not too big.  Normally I’d use <code>strings</code> on something like this, but Windows has a habit of using UTF-16 to store text, so I thought this command won’t help - but the <code>-el</code> option does just that!  It didn’t show anything interesting though.</p>
+
+<p>There’s a screenshot command! That would be too easy if it worked…</p>
+
+<p><code>
+$ mkdir shots
+$ vol screenshot -D shots
+Volatility Foundation Volatility Framework 2.6
+Wrote shots/session_0.Service-0x0-3e4$.Default.png
+Wrote shots/session_0.Service-0x0-3e5$.Default.png
+</code></p>
+
+<p>No luck, but there is one image which shows where notepad and cmd.exe is on the display.</p>
+
+<p>There’s a <code>wintree</code> command, which shows the GUI components:</p>
+
+<p>```
+$ vol wintree
+…
+Untitled - Notepad (visible) notepad.exe:2740 Notepad
+..#50188  notepad.exe:2740 6.0.7601.17514!msctls_statusbar32
+..#501ca (visible) notepad.exe:2740 6.0.7601.17514!Edit
+.Default IME  notepad.exe:2740 IME
+.MSCTFIME UI  notepad.exe:2740 MSCTFIME UI</p>
+
+<p>```</p>
+
+<p>Maybe “edit” controls are what’s used to enter text?</p>
+
+<p>I spent a while trying to get the contents of the controls, then I wondered whether there was some memory not being dumped earlier, but no luck after an hour or so.</p>
+
+<p>I looked through the list of commands (in the README, not the wiki) and noticed the <code>editbox</code> command:</p>
+
+<p><code>
+ vol editbox
+Volatility Foundation Volatility Framework 2.6
+******************************
+Wnd Context       : 1\WinSta0\Default
+Process ID        : 2740
+ImageFileName     : notepad.exe
+IsWow64           : No
+atom_class        : 6.0.7601.17514!Edit
+value-of WndExtra : 0x350490
+nChars            : 33
+selStart          : 33
+selEnd            : 33
+isPwdControl      : False
+undoPos           : 31
+undoLen           : 3
+address-of undoBuf: 0x354740
+undoBuf           : qay
+-------------------------
+flag:noting_notes_in_a_noting_way
+</code></p>
+
+<p>That’s a bit annoying.  I would like to know how to get this using more generic commands, but I don’t know anything about Windows user interfaces and there would be plenty to learn there first.  This does make sense that an older application like notepad would use the control itself for storing its data, so it wouldn’t appear in the memory space.</p>
+
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/cyber-fasttrack-spring-2020-fe01";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2020/03/27/cyber-fasttrack-spring-2020-fe01");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
