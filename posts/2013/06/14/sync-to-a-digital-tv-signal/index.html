@@ -43,22 +43,16 @@
 
   <article class="post-content">
   
-  <p>I remembered seeing some command which could synchronize the system clock to the digital TV (DVB) signal. This is ideal for a MythTV box which isn’t connected to the internet.  It’s <code class="highlighter-rouge">dvbdate</code>. One problem: <a href="http://www.mythtv.org/wiki/Dvbdate">it ignores the system time zone</a>. It can use the <code class="highlighter-rouge">TZ</code> environment variable, whose current value can be obtained using the date <code class="highlighter-rouge">command</code>:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>date +'%z'
-</code></pre></div></div>
-
+  <p>I remembered seeing some command which could synchronize the system clock to the digital TV (DVB) signal. This is ideal for a MythTV box which isn't connected to the internet.  It's <code>dvbdate</code>. One problem: <a href="http://www.mythtv.org/wiki/Dvbdate">it ignores the system time zone</a>. It can use the <code>TZ</code> environment variable, whose current value can be obtained using the date <code>command</code>:</p>
+<pre><code>date +'%z'
+</code></pre>
 <p>so this will set the date:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo TZ=$(date +'%:z') dvbdate --set
-</code></pre></div></div>
-
-<p>so you can put this script in <code class="highlighter-rouge">/etc/cron.hourly</code>, and make it executable:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh -e</span>
-<span class="nv">TZ</span><span class="o">=</span><span class="si">$(</span><span class="nb">date</span> +<span class="s1">'%:z'</span><span class="si">)</span> dvbdate <span class="nt">--set</span>
-</code></pre></div></div>
-
+<pre><code>sudo TZ=$(date +'%:z') dvbdate --set
+</code></pre>
+<p>so you can put this script in <code>/etc/cron.hourly</code>, and make it executable:</p>
+<pre><code>#!/bin/sh -e
+TZ=$(date +'%:z') dvbdate --set
+</code></pre>
 
     <div id="comment_count"></div>
   <div id="disqus_thread" style="display: none;"></div>

@@ -44,44 +44,32 @@
   <article class="post-content">
   
   <p>This is challenge HF05 from the Cyber FastTrack Spring 2020 challenges.</p>
-
 <p>The challenge:</p>
-
 <blockquote>
-  <p>The attacker created a shared folder on the victims machine. Find this folder and give us the absolute path of the directory, including drive letter.</p>
-
-  <p>files.allyourbases.co/fi02.zip</p>
+<p>The attacker created a shared folder on the victims machine. Find this folder and give us the absolute path of the directory, including drive letter.</p>
+<p>files.allyourbases.co/fi02.zip</p>
 </blockquote>
-
 <p>These are the files:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sha1sum fi02.zip memory-image.vmem 
+<pre><code>$ sha1sum fi02.zip memory-image.vmem 
 78c544a8e5cbb9764fd009760a7e4e3ae035db6a  fi02.zip
 7ea854fc529c7517dedbdf0c287a3c4e2a7f3903  memory-image.vmem
-</code></pre></div></div>
-
-<p>Volatility is a memory forensics tool which apparently comes with Kali - I’ve never used any tools like this before, so that will do for startes.</p>
-
-<p>It turns out it <em>doesn’t</em> come with Kali.  To get volatility working in Kali, I found it easiest to download it from the web site, extract it, and create an alias to it:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ cd /tmp
+</code></pre>
+<p>Volatility is a memory forensics tool which apparently comes with Kali - I've never used any tools like this before, so that will do for startes.</p>
+<p>It turns out it <em>doesn't</em> come with Kali.  To get volatility working in Kali, I found it easiest to download it from the web site, extract it, and create an alias to it:</p>
+<pre><code>$ cd /tmp
 $ wget 'http://downloads.volatilityfoundation.org/releases/2.6/volatility_2.6_lin64_standalone.zip'
 $ unzip volatility_2.6_lin64_standalone.zip 
 $ cd volatility_2.6_lin64_standalone/
 $ alias vol=/tmp/volatility_2.6_lin64_standalone/volatility_2.6_lin64_standalone 
-</code></pre></div></div>
-
+</code></pre>
 <p>Start by identifying the image:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol imageinfo -f memory-image.vmem 
+<pre><code>$ vol imageinfo -f memory-image.vmem 
 Volatility Foundation Volatility Framework 2.6
 INFO    : volatility.debug    : Determining profile based on KDBG search...
           Suggested Profile(s) : Win7SP1x64, Win7SP0x64, Win2008R2SP0x64, Win2008R2SP1x64_23418, Win2008R2SP1x64, Win7SP1x64_23418
-</code></pre></div></div>
-
-<p>I’ll guess <code class="highlighter-rouge">Win7SP1x64</code> for starters.  See whether this works:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol --profile=Win7SP1x64 pslist -f memory-image.vmem 
+</code></pre>
+<p>I'll guess <code>Win7SP1x64</code> for starters.  See whether this works:</p>
+<pre><code>$ vol --profile=Win7SP1x64 pslist -f memory-image.vmem 
 Volatility Foundation Volatility Framework 2.6
 Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wow64 Start                          Exit                          
 ------------------ -------------------- ------ ------ ------ -------- ------ ------ ------------------------------ ------------------------------
@@ -89,48 +77,34 @@ Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wo
 0xfffffa8001a5b440 smss.exe                268      4      2       29 ------      0 2019-09-05 14:39:08 UTC+0000                                 
 0xfffffa8002cadb30 csrss.exe               368    344      8      402      0      0 2019-09-05 14:39:23 UTC+0000                                 
 0xfffffa8002d34b30 wininit.exe             420    344      3       74      0      0 2019-09-05 14:39:23 UTC+0000                                 
-</code></pre></div></div>
-
-<p>Typing the –profile and -f is going to get annoying.  These can go in environment files instead:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ export VOLATILITY_PROFILE=Win7SP1x64
+</code></pre>
+<p>Typing the --profile and -f is going to get annoying.  These can go in environment files instead:</p>
+<pre><code>$ export VOLATILITY_PROFILE=Win7SP1x64
 $ export VOLATILITY_LOCATION=file:///tmp/memory-image.vmem
 $ vol pslist
-</code></pre></div></div>
-
+</code></pre>
 <p>The last command shows that the environment variables are working.</p>
-
 <p>How can I find the share?  Maybe the attacker used a console?</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol consoles
-</code></pre></div></div>
-
-<p>There’s some things like IP addresses there, and commands which I guess disable the firewall:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>c:\Users\Redacted\Desktop\IT Support Software&gt;NetSh Advfirewall set allprofiles state off                                                     
+<pre><code>$ vol consoles
+</code></pre>
+<p>There's some things like IP addresses there, and commands which I guess disable the firewall:</p>
+<pre><code>c:\Users\Redacted\Desktop\IT Support Software&gt;NetSh Advfirewall set allprofiles state off                                                     
 Ok.
-</code></pre></div></div>
-
-<p>and the actual version of Windows (<a href="https://www.gaijin.at/en/infos/windows-version-numbers">a quick search</a> tells us it’s Windows 7 service pack 1, so my guess might have been correct):</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Microsoft Windows [Version 6.1.7601]
+</code></pre>
+<p>and the actual version of Windows (<a href="https://www.gaijin.at/en/infos/windows-version-numbers">a quick search</a> tells us it's Windows 7 service pack 1, so my guess might have been correct):</p>
+<pre><code>Microsoft Windows [Version 6.1.7601]
 Copyright (c) 2009 Microsoft Corporation.  All rights reserved.            
-</code></pre></div></div>
-
+</code></pre>
 <p>but other than that, nothing stands out.</p>
-
 <p>I guess Windows would keep its file shares in the registry.  I used a web search to find out where these are, and tried to find that key:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'System\CurrentcontrolSet\Services\Lanmanserver\Shares'
+<pre><code>$ vol printkey -K 'System\CurrentcontrolSet\Services\Lanmanserver\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-</code></pre></div></div>
-
-<p>That’s no good… does that command work at all?  I’ll try something from the manual:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'Microsoft\Security Center\Svc'
+</code></pre>
+<p>That's no good... does that command work at all?  I'll try something from the manual:</p>
+<pre><code>$ vol printkey -K 'Microsoft\Security Center\Svc'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -145,11 +119,9 @@ Subkeys:
 Values:
 REG_QWORD     VistaSp1        : (S) 128920218544262440
 REG_DWORD     AntiVirusOverride : (S) 0
-</code></pre></div></div>
-
-<p>That seems to work.  I notice that there’s some <code class="highlighter-rouge">CurrentControlSet</code> stuff in the share query.  I have a feeling that Windows somehow maps this somewhere else in the registry, <a href="https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_LOCAL_MACHINE/System/CurrentControlSet/index">which is correct</a>.  Searching for <code class="highlighter-rouge">SYSTEM\ControlSet001</code> found nothing, but on a hunch I tried just <code class="highlighter-rouge">ControlSet001</code>:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'ControlSet001'
+</code></pre>
+<p>That seems to work.  I notice that there's some <code>CurrentControlSet</code> stuff in the share query.  I have a feeling that Windows somehow maps this somewhere else in the registry, <a href="https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_LOCAL_MACHINE/System/CurrentControlSet/index">which is correct</a>.  Searching for <code>SYSTEM\ControlSet001</code> found nothing, but on a hunch I tried just <code>ControlSet001</code>:</p>
+<pre><code>$ vol printkey -K 'ControlSet001'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -166,29 +138,23 @@ Subkeys:
   (S) services
 
 Values:
-</code></pre></div></div>
-
-<p>That’s looking more interesting!  Let’s see whether that helps:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'Services\LanmanServer\Shares'
+</code></pre>
+<p>That's looking more interesting!  Let's see whether that helps:</p>
+<pre><code>$ vol printkey -K 'Services\LanmanServer\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-</code></pre></div></div>
-
+</code></pre>
 <p>maybe just the end will do?</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'Shares'
+<pre><code>$ vol printkey -K 'Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-</code></pre></div></div>
-
-<p>I also noticed what <code class="highlighter-rouge">CurrentControlSet</code> does:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'CurrentControlSet'
+</code></pre>
+<p>I also noticed what <code>CurrentControlSet</code> does:</p>
+<pre><code>$ vol printkey -K 'CurrentControlSet'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -201,11 +167,9 @@ Subkeys:
 
 Values:
 REG_LINK      SymbolicLinkValue : (V) \Registry\Machine\System\ControlSet001
-</code></pre></div></div>
-
-<p>I should have a closer look at the output: ControlSet001 lists a subkey of “services”.</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'ControlSet001\services'
+</code></pre>
+<p>I should have a closer look at the output: ControlSet001 lists a subkey of &quot;services&quot;.</p>
+<pre><code>$ vol printkey -K 'ControlSet001\services'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -223,11 +187,9 @@ Subkeys:
   (S) LanmanWorkstation
   (S) ldap
 ...
-</code></pre></div></div>
-
-<p>I’ll keep digging:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'ControlSet001\services\LanmanServer'
+</code></pre>
+<p>I'll keep digging:</p>
+<pre><code>$ vol printkey -K 'ControlSet001\services\LanmanServer'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -260,9 +222,7 @@ REG_BINARY    FailureActions  : (S)
 0x00000000  80 51 01 00 00 00 00 00 00 00 00 00 03 00 00 00   .Q..............
 0x00000010  14 00 00 00 01 00 00 00 60 ea 00 00 01 00 00 00   ........`.......
 0x00000020  c0 d4 01 00 00 00 00 00 00 00 00 00               ............
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ vol printkey -K 'ControlSet001\services\LanmanServer\Shares'
+</code></pre><pre><code>$ vol printkey -K 'ControlSet001\services\LanmanServer\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -276,10 +236,8 @@ Subkeys:
 
 Values:
 REG_MULTI_SZ  exfil           : (S) ['CSCFlags=0', 'MaxUses=4294967295', 'Path=c:\\recyc1e_bin', 'Permissions=63', 'ShareName=exfil', 'Type=0', '', '']
-</code></pre></div></div>
-
-<p><code class="highlighter-rouge">c:\recycle_bin</code> is correct!  I’m happy with about half an hour for a beginner, and I didn’t hit any dead ends.</p>
-
+</code></pre>
+<p><code>c:\recycle_bin</code> is correct!  I'm happy with about half an hour for a beginner, and I didn't hit any dead ends.</p>
 
 
     <div id="comment_count"></div>

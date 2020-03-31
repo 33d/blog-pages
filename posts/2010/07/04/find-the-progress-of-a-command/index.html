@@ -43,21 +43,17 @@
 
   <article class="post-content">
   
-  <p>If you’re running some command that takes a while, perhaps compressing a large file, you often want to know how far along it is.  This is when the <code class="highlighter-rouge">/proc/_pid_/io</code> file is useful.</p>
-
-<p>I might have a <code class="highlighter-rouge">bzip2</code> process running with PID 3722, so <code class="highlighter-rouge">/proc/3722/io</code> might look like this:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rchar: 1791093411
+  <p>If you're running some command that takes a while, perhaps compressing a large file, you often want to know how far along it is.  This is when the <code>/proc/_pid_/io</code> file is useful.</p>
+<p>I might have a <code>bzip2</code> process running with PID 3722, so <code>/proc/3722/io</code> might look like this:</p>
+<pre><code>rchar: 1791093411
 wchar: 224891624
 syscr: 1308428
 syscw: 2992919
 read_bytes: 250478592
 write_bytes: 183074816
 cancelled_write_bytes: 0
-</code></pre></div></div>
-
-<p>The most useful are “rchar” and “wchar” - the number of bytes read and written by this process.</p>
-
+</code></pre>
+<p>The most useful are &quot;rchar&quot; and &quot;wchar&quot; - the number of bytes read and written by this process.</p>
 <p>The <a href="http://kernel.org/doc/Documentation/filesystems/proc.txt">kernel documentation</a> tells you more about this file.</p>
 
 

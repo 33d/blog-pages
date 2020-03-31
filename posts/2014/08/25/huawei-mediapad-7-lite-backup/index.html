@@ -44,29 +44,20 @@
   <article class="post-content">
   
   <p>I recently purchased a Huawei Mediapad 7 Lite 4GB very cheaply on clearance.  It’s based on a Rockchip RK2918, which there are tools for to read and write the flash directly.  Before I start trying to hack it, I should get a backup of what’s already on it.</p>
-
 <p>I found <a href="http://valentijn.sessink.nl/?p=382">a post</a> which describes how the flash of a different Rockchip tablet can be backed up.  Maybe I can catch the USB device being recognized as I restart the tablet.</p>
-
 <p>So, in one terminal:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tail -f /var/log/kern.log
-</code></pre></div></div>
-
+<pre><code>tail -f /var/log/kern.log
+</code></pre>
 <p>and then turn off the tablet.  The battery charge screen appears, and there’s nothing useful yet.</p>
-
 <p>So I held down Volume + and the power button, the screen goes blank.  So I switched it off.  But wait: in the kernel log:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Aug 24 22:29:24 xpee kernel: [ 2187.324056] usb 1-5: new high-speed USB device number 7 using ehci-pci
+<pre><code>Aug 24 22:29:24 xpee kernel: [ 2187.324056] usb 1-5: new high-speed USB device number 7 using ehci-pci
 Aug 24 22:29:25 xpee kernel: [ 2187.869050] usb 1-5: unable to get BOS descriptor
 Aug 24 22:29:25 xpee kernel: [ 2187.869674] usb 1-5: New USB device found, idVendor=2207, idProduct=290a
 Aug 24 22:29:25 xpee kernel: [ 2187.869681] usb 1-5: New USB device strings: Mfr=0, Product=0, SerialNumber=0
-</code></pre></div></div>
-
+</code></pre>
 <p>and a quick search for vendor 2207… Rockchip!  Interesting…</p>
-
 <p>Following <a href="http://valentijn.sessink.nl/?p=382">the post mentioned earlier</a>:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo ./rkflashtool r 0x0000 0x2000 &gt; dump^C
+<pre><code>$ sudo ./rkflashtool r 0x0000 0x2000 &gt; dump^C
 $ strings dump
 PARM
 FIRMWARE_VER:0.2.3
@@ -80,26 +71,18 @@ CHECK_MASK: 0x80
 KERNEL_IMG: 0x60408000
 COMBINATION_KEY: 0,6,A,1,0
 CMDLINE: console=ttyS1,115200n8n androidboot.console=ttyS1 init=/init initrd=0x62000000,0x800000 mtdparts=rk29xxnand:0x00002000@0x00002000(misc),0x00004000@0x00004000(kernel),0x00008000@0x00008000(boot),0x00008000@0x00010000(recovery),0x00002000@0x00018000(backup),0x00006000@0x0001a000(oeminfo),0x00004000@0x00020000(vrcb),0x00008000@0x00024000(reserved),0x00100000@0x0002c000(cust),0x000e6000@0x0012c000(system),0x00080000@0x00212000(cache),0x00008000@0x00292000(userdata),0x00002000@0x0029a000(kpanic),-@0x0029c000(user)
-</code></pre></div></div>
-
+</code></pre>
 <p>I notice that this text appears several times, so I’d better keep this in mind.</p>
-
-<p>The <a href="https://www.kernel.org/doc/menuconfig/drivers-mtd-Kconfig.html#MTD_CMDLINE_PARTS">Linux MTD documentation describes what <code class="highlighter-rouge">mtdparts</code> is for</a>.
-So after copying the <code class="highlighter-rouge">mtdparts</code> bit to a file, with a bit of Perl magic I can dump each “part” to a file:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ perl -pe 's/([0-9a-fx-]*)@([a-f0-9x]*)\(([a-z]*)\).?/\2 \1 \3\n/g' &lt; mtdparts | while read off len name ; do sudo ./rkflashtool r $off $len 2&gt;/dev/null | xz &gt; $name.xz ; done
-</code></pre></div></div>
-
-<p>But what about the last one, which lists the size as <code class="highlighter-rouge">-</code>?  I’ll try reading a block which shouldn’t exist:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo ./rkflashtool r 0xfffffffd 1 | hexdump -C
-</code></pre></div></div>
-
+<p>The <a href="https://www.kernel.org/doc/menuconfig/drivers-mtd-Kconfig.html#MTD_CMDLINE_PARTS">Linux MTD documentation describes what <code>mtdparts</code> is for</a>.
+So after copying the <code>mtdparts</code> bit to a file, with a bit of Perl magic I can dump each “part” to a file:</p>
+<pre><code>$ perl -pe 's/([0-9a-fx-]*)@([a-f0-9x]*)\(([a-z]*)\).?/\2 \1 \3\n/g' &lt; mtdparts | while read off len name ; do sudo ./rkflashtool r $off $len 2&gt;/dev/null | xz &gt; $name.xz ; done
+</code></pre>
+<p>But what about the last one, which lists the size as <code>-</code>?  I’ll try reading a block which shouldn’t exist:</p>
+<pre><code>$ sudo ./rkflashtool r 0xfffffffd 1 | hexdump -C
+</code></pre>
 <p>It doesn’t seem to matter what I change the offset to, it seems to output part of the first block at some seemingly arbitrary offset.  Also, the offset seems to be the start offset in 512 byte blocks, but trying to read one block returns 0x4000 bytes of data.  Looking at <a href="http://sourceforge.net/p/rkflashtool/Git/ci/2bd62daeb5e63f4f1f92d1876b053a2be8cf428c/tree/rkflashtool.c#l248">the source</a> suggests that it reads blocks of 0x4000 bytes, so that’s the minimum it’s going to return.  I tried hacking the code to fail <a href="http://sourceforge.net/p/rkflashtool/Git/ci/2bd62daeb5e63f4f1f92d1876b053a2be8cf428c/tree/doc/protocol.txt#l46">if the error flag in the response</a> is set, but that didn’t help.</p>
-
 <p>But <a href="http://sourceforge.net/p/rkflashtool/Git/ci/2bd62daeb5e63f4f1f92d1876b053a2be8cf428c/tree/doc/protocol.txt#l94">the bottom of the protocol description lists a FlashInfo structure</a>, which contains the number of blocks of flash, but I notice that command hasn’t been implemented.  I hope they didn’t leave it out because it bricks devices… (<a href="https://github.com/33d/rkflashtool/commit/3955541b14adbb8ad55198e870165752a52e4271">hack hack hack</a>) I tried implementing it, but got this:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo ./rkflashtool l | hexdump -C
+<pre><code>$ sudo ./rkflashtool l | hexdump -C
 00000000  00 00 80 00 00 08 08 18  21 04 01 00 00 00 00 00  |........!.......|
 00000010  44 4e 41 4e 20 01 65 00  02 00 00 00 01 01 01 00  |DNAN .e.........|
 00000020  01 01 18 21 04 10 08 70  00 10 00 00 00 08 00 00  |...!...p........|
@@ -112,55 +95,43 @@ So after copying the <code class="highlighter-rouge">mtdparts</code> bit to a fi
 00000090  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
 *
 00000200
-</code></pre></div></div>
-
+</code></pre>
 <p>No permutations of those first 6 bytes and their endianness seem to produce anything useful, so I’ll try something else.</p>
-
-<p>Maybe <code class="highlighter-rouge">/proc/mtd</code> will yield some secrets:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1|shell@android:/ $ cat /proc/mtd
+<p>Maybe <code>/proc/mtd</code> will yield some secrets:</p>
+<pre><code>1|shell@android:/ $ cat /proc/mtd
 dev:    size   erasesize  name
-mtd0: 00400000 00004000 "misc"
-mtd1: 00800000 00004000 "kernel"
-mtd2: 01000000 00004000 "boot"
-mtd3: 01000000 00004000 "recovery"
-mtd4: 00400000 00004000 "backup"
-mtd5: 00c00000 00004000 "oeminfo"
-mtd6: 00800000 00004000 "vrcb"
-mtd7: 01000000 00004000 "reserved"
-mtd8: 20000000 00004000 "cust"
-mtd9: 1cc00000 00004000 "system"
-mtd10: 10000000 00004000 "cache"
-mtd11: 01000000 00004000 "userdata"
-mtd12: 00400000 00004000 "kpanic"
-mtd13: 9a800000 00004000 "user"
-</code></pre></div></div>
-
-<p>Everything in the “size” column seems to be 512*what was listed in <code class="highlighter-rouge">mtdparts</code>.  This makes the <code class="highlighter-rouge">user</code> part 0x4D4000 long.  I can finally back up that part:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo ./rkflashtool r 0x0029c000 0x4d4000 2&gt;user.log | xz &gt; user.xz
-</code></pre></div></div>
-
-<p>I ran <code class="highlighter-rouge">fsck.ext4 -c</code> on the result, and it was happy, so I guess I have the right length.</p>
-
+mtd0: 00400000 00004000 &quot;misc&quot;
+mtd1: 00800000 00004000 &quot;kernel&quot;
+mtd2: 01000000 00004000 &quot;boot&quot;
+mtd3: 01000000 00004000 &quot;recovery&quot;
+mtd4: 00400000 00004000 &quot;backup&quot;
+mtd5: 00c00000 00004000 &quot;oeminfo&quot;
+mtd6: 00800000 00004000 &quot;vrcb&quot;
+mtd7: 01000000 00004000 &quot;reserved&quot;
+mtd8: 20000000 00004000 &quot;cust&quot;
+mtd9: 1cc00000 00004000 &quot;system&quot;
+mtd10: 10000000 00004000 &quot;cache&quot;
+mtd11: 01000000 00004000 &quot;userdata&quot;
+mtd12: 00400000 00004000 &quot;kpanic&quot;
+mtd13: 9a800000 00004000 &quot;user&quot;
+</code></pre>
+<p>Everything in the “size” column seems to be 512*what was listed in <code>mtdparts</code>.  This makes the <code>user</code> part 0x4D4000 long.  I can finally back up that part:</p>
+<pre><code>$ sudo ./rkflashtool r 0x0029c000 0x4d4000 2&gt;user.log | xz &gt; user.xz
+</code></pre>
+<p>I ran <code>fsck.ext4 -c</code> on the result, and it was happy, so I guess I have the right length.</p>
 <p>But I think it might be better to just grab the whole lot:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo ./rkflashtool r 0 0x800000 2&gt;all.log | xz &gt; all.xz
-</code></pre></div></div>
-
+<pre><code>$ sudo ./rkflashtool r 0 0x800000 2&gt;all.log | xz &gt; all.xz
+</code></pre>
 <p>where 0x800000 is 4GB/512, and is a bit bigger than the 0x0029c000+0x4d4000 that I calculated earlier.  I can verify various parts:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ diff &lt;(xzcat user.xz | dd bs=512 ) &lt;( xzcat all.xz | dd bs=512 count=$((0x4d4000))     skip=$((0x29c000)) )
+<pre><code>$ diff &lt;(xzcat user.xz | dd bs=512 ) &lt;( xzcat all.xz | dd bs=512 count=$((0x4d4000))     skip=$((0x29c000)) )
 5062656+0 records in
 5062656+0 records out
 2592079872 bytes (2.6 GB) copied, 56.8184 s, 45.6 MB/s
 5062656+0 records in
 5062656+0 records out
 2592079872 bytes (2.6 GB) copied, 56.8161 s, 45.6 MB/s
-</code></pre></div></div>
-
-<p><code class="highlighter-rouge">diff</code> produced no output, so the data are the same.  I’ll keep a copy of <code class="highlighter-rouge">all.xz</code> and the output from <code class="highlighter-rouge">./rkflashtool p</code> and <code class="highlighter-rouge">cat /proc/mtd</code>, which will let me recover whatever I need to.</p>
-
+</code></pre>
+<p><code>diff</code> produced no output, so the data are the same.  I’ll keep a copy of <code>all.xz</code> and the output from <code>./rkflashtool p</code> and <code>cat /proc/mtd</code>, which will let me recover whatever I need to.</p>
 
 
     <div id="comment_count"></div>

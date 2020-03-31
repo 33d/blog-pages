@@ -43,40 +43,30 @@
 
   <article class="post-content">
   
-  <p>Here’s how I’ve checked that my flash memory (USB stick, SD card etc) isn’t fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.</p>
-
+  <p>Here's how I've checked that my flash memory (USB stick, SD card etc) isn't fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.</p>
 <p>First, find out how big the flash is:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ cat /proc/paritions
+<pre><code>$ cat /proc/paritions
 major minor  #blocks  name
 ...
 8       16   30736384 sdb
-</code></pre></div></div>
-
-<p>Some quick maths tells me the block size is 1024 bytes.  Next, use <code class="highlighter-rouge">openssl</code> to encrypt some zeroes, writing the output to the card:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &gt; /dev/null
+</code></pre>
+<p>Some quick maths tells me the block size is 1024 bytes.  Next, use <code>openssl</code> to encrypt some zeroes, writing the output to the card:</p>
+<pre><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &gt; /dev/null
 30736384+0 records in
 30736384+0 records out
 31474057216 bytes (31 GB) copied, 989.076 s, 31.8 MB/s
 tee: /dev/sdb: No space left on device
-</code></pre></div></div>
-
-<p>I don’t know why it complains about no space, but the number of bytes written looks correct.</p>
-
-<p>(Change some-password to some other word.)  <code class="highlighter-rouge">-nosalt</code> prevents openssl writing a header, which contains the password salt.  Because our encryption key (the <code class="highlighter-rouge">some-password</code> above) doesn’t need to be secure, we don’t care about it, and will stop the same stream being output next time.</p>
-
+</code></pre>
+<p>I don't know why it complains about no space, but the number of bytes written looks correct.</p>
+<p>(Change some-password to some other word.)  <code>-nosalt</code> prevents openssl writing a header, which contains the password salt.  Because our encryption key (the <code>some-password</code> above) doesn't need to be secure, we don't care about it, and will stop the same stream being output next time.</p>
 <p>Now check the result:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
+<pre><code>$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
 30736384+0 records in
 30736384+0 records out
 31474057216 bytes (31 GB) copied, 367.183 s, 85.7 MB/s
 cmp: EOF on /dev/sdb
-</code></pre></div></div>
-
-<p>If it hits the end without complaining about differences, what’s on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.</p>
-
+</code></pre>
+<p>If it hits the end without complaining about differences, what's on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.</p>
 
 
     <div id="comment_count"></div>

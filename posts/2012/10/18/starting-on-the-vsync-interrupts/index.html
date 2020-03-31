@@ -43,46 +43,32 @@
 
   <article class="post-content">
   
-  <p>Now it’s time to adjust the sync signals to get vsync working, so I need an interrupt when the signal goes low so I can adjust the sync pulse on the next cycle.  I have no idea how to start the interrupts.</p>
-
-<p>I did a search in the ChibiOS code for the term “vect”, and found a bunch of them in <code class="highlighter-rouge">hal/platforms/STM32L1xx/hal_lld.h</code>, of which TIM11_IRQHandler looks the most appropriate.  But there seems to be only one vector all possible events, like an overflow or a compare match.</p>
-
-<p>It <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:howtos:interrupts">looks like “fast” interrupt handlers</a> look like this:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>volatile int line;
+  <p>Now it's time to adjust the sync signals to get vsync working, so I need an interrupt when the signal goes low so I can adjust the sync pulse on the next cycle.  I have no idea how to start the interrupts.</p>
+<p>I did a search in the ChibiOS code for the term &quot;vect&quot;, and found a bunch of them in <code>hal/platforms/STM32L1xx/hal_lld.h</code>, of which TIM11_IRQHandler looks the most appropriate.  But there seems to be only one vector all possible events, like an overflow or a compare match.</p>
+<p>It <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:howtos:interrupts">looks like &quot;fast&quot; interrupt handlers</a> look like this:</p>
+<pre><code>volatile int line;
 CH_IRQ_HANDLER(TIM11_IRQHandler) {
   ++line;
 }
-</code></pre></div></div>
-
-<p>It compiles at least… but did it register as an interrupt handler?  I tried the trick with AVRs that shows disassembled code:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>arm-none-eabi-objdump -S -h build/ch.elf
-</code></pre></div></div>
-
-<p>It shows that the first section starts at address 0x08000100… just after the vector table, which should appear at the start! Right at the top though, there’s a “startup” section at the correct address. After stuffing around with various objdump options, this showed me the vector table:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>arm-none-eabi-objdump -h -s --special-syms build/ch.elf
-</code></pre></div></div>
-
-<p>Table 34 of the reference manual lists all of the interrupts, and TIM11 is at offset 0xAC. Objdump doesn’t show anything promising in this location!  But there’s something strange in <code class="highlighter-rouge">hal_lld.h</code>:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define TIM9_IRQHandler         VectorA0    /**&lt; TIM9.                      */
+</code></pre>
+<p>It compiles at least... but did it register as an interrupt handler?  I tried the trick with AVRs that shows disassembled code:</p>
+<pre><code>arm-none-eabi-objdump -S -h build/ch.elf
+</code></pre>
+<p>It shows that the first section starts at address 0x08000100... just after the vector table, which should appear at the start! Right at the top though, there's a &quot;startup&quot; section at the correct address. After stuffing around with various objdump options, this showed me the vector table:</p>
+<pre><code>arm-none-eabi-objdump -h -s --special-syms build/ch.elf
+</code></pre>
+<p>Table 34 of the reference manual lists all of the interrupts, and TIM11 is at offset 0xAC. Objdump doesn't show anything promising in this location!  But there's something strange in <code>hal_lld.h</code>:</p>
+<pre><code>#define TIM9_IRQHandler         VectorA0    /**&lt; TIM9.                      */
 #define TIM10_IRQHandler        VectorA4    /**&lt; TIM10.                     */
 #define TIM11_IRQHandler        VectorA8    /**&lt; TIM11.                     */
 #define LCD_IRQHandler          VectorAC    /**&lt; LCD.                       */
-</code></pre></div></div>
-
+</code></pre>
 <p>The datasheet though says that the LCD is vector A0, TIM9 is A4, 10 is A8 and 11 is AC.  I guess the way to find out is to try both and see what happens.</p>
-
 <p>First the timer needs to be configured to use those interrupts.</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  TIM11-&gt;DIER = TIM_DIER_UIE; // enable interrupt on "update" (ie. overflow)
-</code></pre></div></div>
-
+<pre><code>  TIM11-&gt;DIER = TIM_DIER_UIE; // enable interrupt on &quot;update&quot; (ie. overflow)
+</code></pre>
 <p>So does this do anything? I used the debugger to find out:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gdb build/ch.elf &lt;/strong&gt;
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gdb build/ch.elf &lt;/strong&gt;
 ....
 Reading symbols from /home/damien/projects/stm32/video/build/ch.elf...done.
 (gdb) &lt;strong&gt;p lineA8&lt;/strong&gt;
@@ -94,20 +80,17 @@ $2 = 0
 Program received signal SIGINT, Interrupt.
 0x08000598 in _idle_thread (p=)
     at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
-62	  chRegSetThreadName("idle");
+62	  chRegSetThreadName(&quot;idle&quot;);
 (gdb) &lt;strong&gt;p lineAC&lt;/strong&gt;
 $3 = 0
 (gdb) &lt;strong&gt;p lineA8&lt;/strong&gt;
 $4 = 0
 (gdb)
-</code></pre></div></div>
-
-<p>So it’s doing nothing!  Why not? I looked through the ChibiOS sources where the timers are configured, and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8c_source.html#l00296">found a call to nvicEnableVector</a>, which looks promising.  It needs a “priority” parameter though, so what should that be?  <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8h.html">gpt_lld.h</a> lists some priorities.  ChibiOS always sends the priorities through a macro called <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/group___a_r_m_c_mx___c_o_r_e.html#gabf50672d926743f012521dad719f3a0f">CORTEX_PRIORITY_MASK</a>, but that seems to move the number to the correct place in a register.  The CPU manual (section 5.3) says that lower numbers have higher priority, and this needs to be very high, so I’ll choose 2.</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  nvicEnableVector(TIM11_IRQn, CORTEX_PRIORITY_MASK(2));
-</code></pre></div></div>
-
-<p>It doesn’t like that much - the light doesn’t blink, so it looks like the chip crashed!  I’m starting to get a bit annoyed with my slow progress; maybe I’ll try to rewrite my code using ChibiOS as much as I can.  While this chip is powerful, its also very complicated, which makes me think it’s not that practical to program it directly.  <a href="http://sourcegate.wordpress.com/2012/10/20/more-on-the-vsync-interrupts/">I soldiered on anyway</a>…</p>
+</code></pre>
+<p>So it's doing nothing!  Why not? I looked through the ChibiOS sources where the timers are configured, and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8c_source.html#l00296">found a call to nvicEnableVector</a>, which looks promising.  It needs a &quot;priority&quot; parameter though, so what should that be?  <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/gpt__lld_8h.html">gpt_lld.h</a> lists some priorities.  ChibiOS always sends the priorities through a macro called <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/group___a_r_m_c_mx___c_o_r_e.html#gabf50672d926743f012521dad719f3a0f">CORTEX_PRIORITY_MASK</a>, but that seems to move the number to the correct place in a register.  The CPU manual (section 5.3) says that lower numbers have higher priority, and this needs to be very high, so I'll choose 2.</p>
+<pre><code>  nvicEnableVector(TIM11_IRQn, CORTEX_PRIORITY_MASK(2));
+</code></pre>
+<p>It doesn't like that much - the light doesn't blink, so it looks like the chip crashed!  I'm starting to get a bit annoyed with my slow progress; maybe I'll try to rewrite my code using ChibiOS as much as I can.  While this chip is powerful, its also very complicated, which makes me think it's not that practical to program it directly.  <a href="http://sourcegate.wordpress.com/2012/10/20/more-on-the-vsync-interrupts/">I soldiered on anyway</a>...</p>
 
 
     <div id="comment_count"></div>

@@ -43,75 +43,59 @@
 
   <article class="post-content">
   
-  <p>Well, not really offline since you’ll still have to download some files, but not all of the packages.  Use this for computers with limited internet quota.  I’m sure this could be done in a single script with some awk-fu.</p>
-
+  <p>Well, not really offline since you'll still have to download some files, but not all of the packages.  Use this for computers with limited internet quota.  I'm sure this could be done in a single script with some awk-fu.</p>
 <ol>
-  <li>Produce a list of your current package selections:</li>
+<li>Produce a list of your current package selections:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dpkg --get-selections | awk '{ print $1 }' &gt; selections
-</code></pre></div></div>
-
-<ol>
-  <li>Get the package lists:</li>
+<pre><code>dpkg --get-selections | awk '{ print $1 }' &gt; selections
+</code></pre>
+<ol start="2">
+<li>Get the package lists:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>for s in lucid/main lucid/multiverse lucid/restricted lucid/universe \
+<pre><code>for s in lucid/main lucid/multiverse lucid/restricted lucid/universe \
         lucid-updates/main lucid-updates/multiverse \
         lucid-updates/restricted lucid-updates/universe ; do \
-    wget -c "http://archive.ubuntu.com/ubuntu/dists/$s/binary-i386/Packages.bz2" \
+    wget -c &quot;http://archive.ubuntu.com/ubuntu/dists/$s/binary-i386/Packages.bz2&quot; \
         -O Packages_${s/\//_}.bz2 ; \
 done
-</code></pre></div></div>
-
+</code></pre>
 <p>This grabs the package lists in filenames like this:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Packages_lucid-updates_restricted.bz2
-</code></pre></div></div>
-
-<ol>
-  <li>Extract the filenames from these package lists:</li>
+<pre><code>Packages_lucid-updates_restricted.bz2
+</code></pre>
+<ol start="3">
+<li>Extract the filenames from these package lists:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>for f in Packages*.bz2 ; do bzcat $f | awk '
+<pre><code>for f in Packages*.bz2 ; do bzcat $f | awk '
 /^Package/ { package=$2 } 
-/^Filename/ { print package "\t" $2 } 
+/^Filename/ { print package &quot;\t&quot; $2 } 
 ' &gt; ${f%%.bz2}.filenames ; done
-</code></pre></div></div>
-
-<ol>
-  <li>Produce a list of all filenames, making sure the updates get precedence over the other ones:</li>
+</code></pre>
+<ol start="4">
+<li>Produce a list of all filenames, making sure the updates get precedence over the other ones:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat `ls -1 Package*.filenames | sort` | awk '
+<pre><code>cat `ls -1 Package*.filenames | sort` | awk '
 { files[$1] = $2 }
 END {
-  for (p in files) print p "\t" files[p]
+  for (p in files) print p &quot;\t&quot; files[p]
 }' | sort &gt; all.filenames
-</code></pre></div></div>
-
-<ol>
-  <li>Produce a script of your selections:</li>
+</code></pre>
+<ol start="5">
+<li>Produce a script of your selections:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>awk '
-BEGIN { while (getline &lt; "all.filenames" != 0) filenames[$1] = $2 }
-{ if ($1 in filenames) print "wget -c http://archive.ubuntu.com/ubuntu/" filenames[$1] }
+<pre><code>awk '
+BEGIN { while (getline &lt; &quot;all.filenames&quot; != 0) filenames[$1] = $2 }
+{ if ($1 in filenames) print &quot;wget -c http://archive.ubuntu.com/ubuntu/&quot; filenames[$1] }
 '  &lt; selections &gt; downloads
-</code></pre></div></div>
-
-<ol>
-  <li>Take the file <code class="highlighter-rouge">downloads</code> to another computer, and run it:</li>
+</code></pre>
+<ol start="6">
+<li>Take the file <code>downloads</code> to another computer, and run it:</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sh downloads
-</code></pre></div></div>
-
-<ol>
-  <li>Take the downloaded files back to the offline computer, copy the files to <code class="highlighter-rouge">/var/cache/apt/archives</code>, then <code class="highlighter-rouge">do-release-upgrade</code>.</li>
+<pre><code>sh downloads
+</code></pre>
+<ol start="7">
+<li>Take the downloaded files back to the offline computer, copy the files to <code>/var/cache/apt/archives</code>, then <code>do-release-upgrade</code>.</li>
 </ol>
-
-<p>You could probably save more quota by renaming the Package files and copying them to <code class="highlighter-rouge">/var/lib/apt/lists</code>.</p>
+<p>You could probably save more quota by renaming the Package files and copying them to <code>/var/lib/apt/lists</code>.</p>
 
 
     <div id="comment_count"></div>

@@ -43,56 +43,33 @@
 
   <article class="post-content">
   
-  <p>I’m thinking of building a robot that suspends a whiteboard marker from two strings, and draws on a whiteboard.  There would be two motors that can change the length of the strings.</p>
-
+  <p>I'm thinking of building a robot that suspends a whiteboard marker from two strings, and draws on a whiteboard.  There would be two motors that can change the length of the strings.</p>
 <p>I was playing with some calculations for this robot, literally on the back of an envelope.  I need to calculate how long each string will be for a particular coordinate.</p>
-
-<div class="content-image">
-<a href="/images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png">
-<img src="/generated/400-whiteboard-robot-maths-1.png" alt="" srcset="    /generated/400-whiteboard-robot-maths-1.png 400w, /images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png 469w" sizes="400px" />
+<div class='content-image'>
+<a href='/images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png'>
+<img src="/generated/400-whiteboard-robot-maths-1.png" alt="" srcset="    /generated/400-whiteboard-robot-maths-1.png 400w, /images/wp/2012-07-03-whiteboard-robot-number-crunching/whiteboard-robot-maths-1.png 469w" sizes="400px">
 </a>
 </div>
-
-<p>Pythagoras’ theorem gives:</p>
-
+<p>Pythagoras' theorem gives:</p>
 <p>$latex l_1^2=x^2+y^2 &amp;s=1$</p>
-
 <p>and</p>
-
 <p>$latex l_1^2=r^2+s^2 &amp;s=1$</p>
-
 <p>If we smash them together, we get:</p>
-
 <p>$latex r^2 + s_1^2 = x^2 + y^2 &amp;s=1$</p>
-
 <p>$latex s_1 = \sqrt{x^2+y^2-r^2} &amp;s=1$</p>
-
 <p>and of course</p>
-
 <p>$latex s_2 = \sqrt{(w-x)^2+y^2-r^2} &amp;s=1$</p>
-
-<p>That was easier than I expected - the maths wasn’t too hard!  This should be enough to draw short segments with linear interpolation.</p>
-
-<p>But, I’d like to know how the string length changes as I draw a straight line.  Imagine a line being drawn perpendicular to the string; when the length of the string gets very long, it should lengthen at the same rate as the line.  This suggests that the string length and the line length forms a hyperbola.</p>
-
+<p>That was easier than I expected - the maths wasn't too hard!  This should be enough to draw short segments with linear interpolation.</p>
+<p>But, I'd like to know how the string length changes as I draw a straight line.  Imagine a line being drawn perpendicular to the string; when the length of the string gets very long, it should lengthen at the same rate as the line.  This suggests that the string length and the line length forms a hyperbola.</p>
 <p>Consider a horizontal line beneath one of the wheels.  Let <em>x</em> be the distance from the closest point on the line to the wheel.  <em>s</em> is the string length.  If the line went through the wheel, the graph</p>
-
 <p>$latex \frac{x}{s}=1 &amp;s=1$</p>
-
 <p>would give the line where the <em>x</em> position is the same as the string length.</p>
-
 <p>If the line does not pass through the wheel, this equation from earlier where <em>r</em> is the wheel radius and <em>y</em> is the shortest distance from the wheel to the line:</p>
-
 <p>$latex s^2 = x^2 + y^2 - r^2 &amp;s=1$</p>
-
 <p>can become</p>
-
 <p>$latex 1 = \frac{x^2 + y^2 - r^2}{s^2} &amp;s=1$</p>
-
 <p>which should produce a hyperbola.  When the string is long enough, <em>y²-r²</em> becomes negligible.</p>
-
-<p>Previously I’ve implemented Bresenham’s algorithm to interpolate values on an AVR; it would be nice to do the same thing to calculate this parabola while drawing a straight line segment.  It turns out <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.19.2194&amp;rep=rep1&amp;type=pdf"> someone has worked out how to use calculations like this for hyperbolae</a>.</p>
-
+<p>Previously I've implemented Bresenham's algorithm to interpolate values on an AVR; it would be nice to do the same thing to calculate this parabola while drawing a straight line segment.  It turns out <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.19.2194&amp;rep=rep1&amp;type=pdf"> someone has worked out how to use calculations like this for hyperbolae</a>.</p>
 
 
     <div id="comment_count"></div>

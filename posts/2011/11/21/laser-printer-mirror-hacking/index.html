@@ -44,25 +44,19 @@
   <article class="post-content">
   
   <p>I pulled the mirror out of a laster pinter, and I had a go making it work.</p>
-
-<div class="content-image">
-<a href="/images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg">
-<img src="/generated/400-printer_mirror_circuit.jpg" alt="" srcset="    /generated/400-printer_mirror_circuit.jpg 400w, /images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg 1041w" sizes="400px" />
+<div class='content-image'>
+<a href='/images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg'>
+<img src="/generated/400-printer_mirror_circuit.jpg" alt="" srcset="    /generated/400-printer_mirror_circuit.jpg 400w, /images/wp/2011-11-21-laser-printer-mirror-hacking/printer_mirror_circuit.jpg 1041w" sizes="400px">
 </a>
 </div>
-
-<p>I’d seen an article before that does this, but I <a href="http://www.google.com/url?sa=t&amp;rct=j&amp;q=lb11872&amp;source=web&amp;cd=1&amp;ved=0CBsQFjAA&amp;url=http%3A%2F%2Fwww.alldatasheet.com%2Fview.jsp%3FSearchword%3DLB11872-SOP&amp;ei=Ph_KTvPjM8OaiQf0k_DeDw&amp;usg=AFQjCNEoIPeeMnwf_LmETZxn0WEhLxJbsg&amp;cad=rja">had a datasheet for the driver chip</a>.  Conveniently all of the pins I needed had test points on the board - that saves me having to attach something to the original plug.</p>
-
-<div class="content-image">
-<a href="/images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg">
-<img src="/" alt="" srcset=" /images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg 221w" sizes="400px" />
+<p>I'd seen an article before that does this, but I <a href="http://www.google.com/url?sa=t&amp;rct=j&amp;q=lb11872&amp;source=web&amp;cd=1&amp;ved=0CBsQFjAA&amp;url=http%3A%2F%2Fwww.alldatasheet.com%2Fview.jsp%3FSearchword%3DLB11872-SOP&amp;ei=Ph_KTvPjM8OaiQf0k_DeDw&amp;usg=AFQjCNEoIPeeMnwf_LmETZxn0WEhLxJbsg&amp;cad=rja">had a datasheet for the driver chip</a>.  Conveniently all of the pins I needed had test points on the board - that saves me having to attach something to the original plug.</p>
+<div class='content-image'>
+<a href='/images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg'>
+<img src="/" alt="" srcset=" /images/wp/2011-11-21-laser-printer-mirror-hacking/mirror_labelled.jpg 221w" sizes="400px">
 </a>
 </div>
-
-<p>It was pretty easy to drive - apply 12V, put a square wave on CLK and pull SS low.  The datasheet says that 5V is fine for the clock signal.  Apparently LD changes state once the mirror is up to speed.  The laster started spinning at 50Hz, but ran a bit rough below 500Hz.  It didn’t get any faster once the signal was at 5kHz.</p>
-
+<p>It was pretty easy to drive - apply 12V, put a square wave on CLK and pull SS low.  The datasheet says that 5V is fine for the clock signal.  Apparently LD changes state once the mirror is up to speed.  The laster started spinning at 50Hz, but ran a bit rough below 500Hz.  It didn't get any faster once the signal was at 5kHz.</p>
 <p>To test out the relationship between the mirror and the clock signal, I made an Arduino flash a light 6 times for each clock pulse.  I saw 6 reflections in the mirror, so I guess the mirror spins 1/6 of a resolution for each clock pulse.</p>
-
 <p>I tried running it at 5V, but I had no luck there.</p>
 
 

@@ -43,39 +43,35 @@
 
   <article class="post-content">
   
-  <p>I was looking for a way to add captions to JPEG images without re-encoding them.  It turns out there’s <a href="http://jpegclub.org/jpegtran/">a patch to jpegtran</a> that overlay one JPEG image over another one, without re-encoding either.  Here’s how I built it:</p>
-
+  <p>I was looking for a way to add captions to JPEG images without re-encoding them.  It turns out there's <a href="http://jpegclub.org/jpegtran/">a patch to jpegtran</a> that overlay one JPEG image over another one, without re-encoding either.  Here's how I built it:</p>
 <ol>
-  <li>
-    <p>Download <a href="http://www.ijg.org/">the sources of the IJG version of jpegtran</a> (I used version 8c), and decompress it somewhere</p>
-  </li>
-  <li>
-    <p>Download <a href="http://jpegclub.org/droppatch.v8.tar.gz">the “drop” patch</a>, and copy the source files into the source extracted in the previous step</p>
-  </li>
-  <li>
-    <p>configure, make (as usual)</p>
-  </li>
+<li>
+<p>Download <a href="http://www.ijg.org/">the sources of the IJG version of jpegtran</a> (I used version 8c), and decompress it somewhere</p>
+</li>
+<li>
+<p>Download <a href="http://jpegclub.org/droppatch.v8.tar.gz">the &quot;drop&quot; patch</a>, and copy the source files into the source extracted in the previous step</p>
+</li>
+<li>
+<p>configure, make (as usual)</p>
+</li>
 </ol>
-
 <p>I made a script that automatically adds a label using Imagemagick to create the label, and this version of jpegtran to put them together:</p>
+<pre><code>#!/bin/sh
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh</span>
+JPEGTRAN=&quot;/opt/jpeg-8c/bin/jpegtran&quot;
 
-<span class="nv">JPEGTRAN</span><span class="o">=</span><span class="s2">"/opt/jpeg-8c/bin/jpegtran"</span>
+if [ $# -lt 3 ] ; then
+echo &quot;Usage: jpeglabel [label] [in] [out]&quot; &gt;2
+exit 2
+fi
 
-<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span><span class="nt">-lt</span> 3 <span class="o">]</span> <span class="p">;</span> <span class="k">then
-</span><span class="nb">echo</span> <span class="s2">"Usage: jpeglabel [label] [in] [out]"</span> <span class="o">&gt;</span>2
-<span class="nb">exit </span>2
-<span class="k">fi
+LABELFILE=`mktemp`
+convert -type truecolor -size 256x16 &quot;label:$1&quot; jpg:&quot;$LABELFILE&quot;
+&quot;$JPEGTRAN&quot; -drop +16-16 &quot;$LABELFILE&quot; -outfile &quot;$3&quot; &quot;$2&quot;
 
-</span><span class="nv">LABELFILE</span><span class="o">=</span><span class="sb">`</span><span class="nb">mktemp</span><span class="sb">`</span>
-convert <span class="nt">-type</span> truecolor <span class="nt">-size</span> 256x16 <span class="s2">"label:</span><span class="nv">$1</span><span class="s2">"</span> jpg:<span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span>
-<span class="s2">"</span><span class="nv">$JPEGTRAN</span><span class="s2">"</span> <span class="nt">-drop</span> +16-16 <span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span> <span class="nt">-outfile</span> <span class="s2">"</span><span class="nv">$3</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$2</span><span class="s2">"</span>
-
-<span class="nb">rm</span> <span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span>
-</code></pre></div></div>
-
-<p>I tried making some examples to show, but it turns out the (experimental) “drop” patch is very fussy about the files you give it.  I got it to work on 320x240 pictures from my camera, but not on some other images I tried.  It requires the “sampling ratio” to be the same on both images, which is found in the advanced JPEG settings in Gimp.</p>
+rm &quot;$LABELFILE&quot;
+</code></pre>
+<p>I tried making some examples to show, but it turns out the (experimental) &quot;drop&quot; patch is very fussy about the files you give it.  I got it to work on 320x240 pictures from my camera, but not on some other images I tried.  It requires the &quot;sampling ratio&quot; to be the same on both images, which is found in the advanced JPEG settings in Gimp.</p>
 
 
     <div id="comment_count"></div>

@@ -43,24 +43,22 @@
 
   <article class="post-content">
   
-  <p>I <a href="http://sourcegate.wordpress.com/2012/09/27/using-sts-libraries-with-the-stm32l-discovery/">previously used the libraries provided by ST to do something on the STM32L Discovery</a>, now I’ve made a short demo of using <a href="http://www.chibios.org/">ChibiOS</a>.  Hopefully by using an OS to write code, I don’t have to mess around with timers myself to process events periodically, which I always found time consuming on the AVR.  Here’s what I did:</p>
-
+  <p>I <a href="http://sourcegate.wordpress.com/2012/09/27/using-sts-libraries-with-the-stm32l-discovery/">previously used the libraries provided by ST to do something on the STM32L Discovery</a>, now I've made a short demo of using <a href="http://www.chibios.org/">ChibiOS</a>.  Hopefully by using an OS to write code, I don't have to mess around with timers myself to process events periodically, which I always found time consuming on the AVR.  Here's what I did:</p>
 <ol>
-  <li>
-    <p><a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:download">Download</a> and extract ChibiOS.  I used version 2.4.2.  I extracted the archive to /opt.</p>
-  </li>
-  <li>
-    <p>Make a copy of this directory: <code class="highlighter-rouge">ChibiOS_2.4.2/demos/ARMCM3-STM32L152-DISCOVERY</code>.  This is what I edited for my demo.</p>
-  </li>
-  <li>
-    <p>Delete the <code class="highlighter-rouge">keil</code> and <code class="highlighter-rouge">iar</code> directories; they’re for different IDEs and we don’t need them.</p>
-  </li>
-  <li>
-    <p>Replace main.c with this:</p>
-  </li>
+<li>
+<p><a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:download">Download</a> and extract ChibiOS.  I used version 2.4.2.  I extracted the archive to /opt.</p>
+</li>
+<li>
+<p>Make a copy of this directory: <code>ChibiOS_2.4.2/demos/ARMCM3-STM32L152-DISCOVERY</code>.  This is what I edited for my demo.</p>
+</li>
+<li>
+<p>Delete the <code>keil</code> and <code>iar</code> directories; they're for different IDEs and we don't need them.</p>
+</li>
+<li>
+<p>Replace main.c with this:</p>
+</li>
 </ol>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include &lt;ch.h&gt;
+<pre><code>#include &lt;ch.h&gt;
 #include &lt;hal.h&gt;
 
 int main(void) {
@@ -75,32 +73,23 @@ int main(void) {
     chThdSleepMilliseconds(500);
   }
 }
-</code></pre></div></div>
-
+</code></pre>
 <p>I adapted this from <a href="http://importgeek.wordpress.com/2012/09/22/stm32f4discovery-gpio-programming-using-chibios-rtos/">another blog</a>.</p>
-
-<ol>
-  <li>
-    <p>In the <code class="highlighter-rouge">Makefile</code>, change the <code class="highlighter-rouge">CHIBIOS</code> variable to point to where you extracted ChibiOS.</p>
-  </li>
-  <li>
-    <p>Run <code class="highlighter-rouge">make</code>, then upload the binary to the Discovery.  The correct compiler should be invoked if the Linaro bare-metal compiler is on your PATH, like I did for <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">my first coding attempt</a>.</p>
-  </li>
+<ol start="5">
+<li>
+<p>In the <code>Makefile</code>, change the <code>CHIBIOS</code> variable to point to where you extracted ChibiOS.</p>
+</li>
+<li>
+<p>Run <code>make</code>, then upload the binary to the Discovery.  The correct compiler should be invoked if the Linaro bare-metal compiler is on your PATH, like I did for <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">my first coding attempt</a>.</p>
+</li>
 </ol>
-
-<p>It’s as simple as that - a light that flashes once a second!</p>
-
+<p>It's as simple as that - a light that flashes once a second!</p>
 <p>So what does this code do?</p>
-
-<p><code class="highlighter-rouge">halInit()</code> and <code class="highlighter-rouge">chSysInit()</code> seem to go at the start of any ChibiOS program. The HAL is what tries to abstract out the peripherals on each chip. The <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:documents:architecture">document about the architecture</a> explains this some more.</p>
-
-<p><code class="highlighter-rouge">pal</code> means “Port Abstraction Layer”, and functions relating to this start with <code class="highlighter-rouge">pal</code>. Functions starting with <code class="highlighter-rouge">ch</code> relate to the kernel. There are two reference manuals in ChibiOS: <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/index.html">one for the kernel</a> (the cross platform stuff, although there’s a separate manual for each compiler), and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/index.html">one for the peripherals</a> (the more chip-specific stuff).</p>
-
-<p>It looks like once you call <code class="highlighter-rouge">chSysInit</code>, that function continues to run as a thread.  I would hope because we’re calling a sleep function, the CPU is actually sleeping and not busy-waiting.</p>
-
-<p>I’m surprised how easy this was to get running.  The Makefile is very good - you don’t need to keep a copy of the entire operating system in your project directory; it will find it and compile the relevant parts.  There’s no code directly accessing the hardware either, so the I/O code is no more complicated than Arduino code.  Of course I’m expecting to have to learn more about ChibiOS and the STM32L as I make more complicated things.</p>
-
-<p>I’d like to use ChibiOS to write firmware to drive a television from the Discovery, so I can learn about RTOS scheduling and DMA, which I plan to use to copy the framebuffer to the output.  I imagine I’ll need to learn more about how clocks work to control the speed the data is written to the TV.</p>
+<p><code>halInit()</code> and <code>chSysInit()</code> seem to go at the start of any ChibiOS program. The HAL is what tries to abstract out the peripherals on each chip. The <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:documents:architecture">document about the architecture</a> explains this some more.</p>
+<p><code>pal</code> means &quot;Port Abstraction Layer&quot;, and functions relating to this start with <code>pal</code>. Functions starting with <code>ch</code> relate to the kernel. There are two reference manuals in ChibiOS: <a href="http://chibios.sourceforge.net/docs/kernel_cmx_gcc_rm/index.html">one for the kernel</a> (the cross platform stuff, although there's a separate manual for each compiler), and <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/index.html">one for the peripherals</a> (the more chip-specific stuff).</p>
+<p>It looks like once you call <code>chSysInit</code>, that function continues to run as a thread.  I would hope because we're calling a sleep function, the CPU is actually sleeping and not busy-waiting.</p>
+<p>I'm surprised how easy this was to get running.  The Makefile is very good - you don't need to keep a copy of the entire operating system in your project directory; it will find it and compile the relevant parts.  There's no code directly accessing the hardware either, so the I/O code is no more complicated than Arduino code.  Of course I'm expecting to have to learn more about ChibiOS and the STM32L as I make more complicated things.</p>
+<p>I'd like to use ChibiOS to write firmware to drive a television from the Discovery, so I can learn about RTOS scheduling and DMA, which I plan to use to copy the framebuffer to the output.  I imagine I'll need to learn more about how clocks work to control the speed the data is written to the TV.</p>
 
 
     <div id="comment_count"></div>

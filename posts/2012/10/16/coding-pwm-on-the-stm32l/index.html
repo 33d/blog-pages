@@ -43,11 +43,10 @@
 
   <article class="post-content">
   
-  <p>So how about coding up the PWM to produce the hsync signal from <a href="http://sourcegate.wordpress.com/2012/10/10/more-timing-video-signals-on-the-stm32l-discovery/">my previous post</a>?  Here’s my first attempt:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include "ch.h"
-#include "hal.h"
-#include "stm32l1xx.h"
+  <p>So how about coding up the PWM to produce the hsync signal from <a href="http://sourcegate.wordpress.com/2012/10/10/more-timing-video-signals-on-the-stm32l-discovery/">my previous post</a>?  Here's my first attempt:</p>
+<pre><code>#include &quot;ch.h&quot;
+#include &quot;hal.h&quot;
+#include &quot;stm32l1xx.h&quot;
 
 int main(void) {
   halInit();
@@ -79,34 +78,31 @@ int main(void) {
     chThdSleepMilliseconds(500);
   }
 }
-</code></pre></div></div>
-
-<p>I’ll attach my <a href="http://www.seeedstudio.com/depot/dso-nano-v2-p-681.html?cPath=174">DSO Nano</a> to PB9, and… nothing!  I don’t think it’s the DSO; that should be good to a few μs.</p>
-
-<p>So why isn’t it running? Maybe the timer is running, but the pin output isn’t.  I started OpenOCD, and attached GDB to it.  The datasheet says that TIM11 is at 0x40011000, and the reference manual says the counter is at offset 0x24.  With this information, I can look at the contents of the timer - the GDB manual says I can <a href="http://sourceware.org/gdb/current/onlinedocs/gdb/Memory.html#Memory">look at memory using the “x” command</a>:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gdb build/ch.elf&lt;/strong&gt;
+</code></pre>
+<p>I'll attach my <a href="http://www.seeedstudio.com/depot/dso-nano-v2-p-681.html?cPath=174">DSO Nano</a> to PB9, and... nothing!  I don't think it's the DSO; that should be good to a few μs.</p>
+<p>So why isn't it running? Maybe the timer is running, but the pin output isn't.  I started OpenOCD, and attached GDB to it.  The datasheet says that TIM11 is at 0x40011000, and the reference manual says the counter is at offset 0x24.  With this information, I can look at the contents of the timer - the GDB manual says I can <a href="http://sourceware.org/gdb/current/onlinedocs/gdb/Memory.html#Memory">look at memory using the &quot;x&quot; command</a>:</p>
+<pre><code>$ &lt;strong&gt;arm-none-eabi-gdb build/ch.elf&lt;/strong&gt;
 GNU gdb (GNU Tools for ARM Embedded Processors) 7.3.1.20120613-cvs
 Copyright (C) 2011 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
 This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "--host=i686-linux-gnu --target=arm-none-eabi".
+There is NO WARRANTY, to the extent permitted by law.  Type &quot;show copying&quot;
+and &quot;show warranty&quot; for details.
+This GDB was configured as &quot;--host=i686-linux-gnu --target=arm-none-eabi&quot;.
 For bug reporting instructions, please see:
 &lt;http://www.gnu.org/software/gdb/bugs/&gt;...
 Reading symbols from /home/damien/projects/stm32/video/build/ch.elf...done.
 (gdb) &lt;strong&gt;target remote :3333&lt;/strong&gt;
 Remote debugging using :3333
 ResetHandler () at /opt/ChibiOS_2.4.2/os/ports/GCC/ARMCMx/crt0.c:262
-262      asm volatile ("cpsid   i");
+262      asm volatile (&quot;cpsid   i&quot;);
 (gdb) &lt;strong&gt;cont&lt;/strong&gt;
 Continuing.
 &lt;strong&gt;^C&lt;/strong&gt;
 Program received signal SIGINT, Interrupt.
 0x08000588 in _idle_thread (p=&lt;optimized out&gt;)
 at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
-62      chRegSetThreadName("idle");
+62      chRegSetThreadName(&quot;idle&quot;);
 (gdb) &lt;strong&gt;x 0x40011024&lt;/strong&gt;
 0x40011024:    0x000002ed
 (gdb) &lt;strong&gt;cont&lt;/strong&gt;
@@ -115,7 +111,7 @@ Continuing.
 Program received signal SIGINT, Interrupt.
 0x08000588 in _idle_thread (p=&lt;optimized out&gt;)
 at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
-62      chRegSetThreadName("idle");
+62      chRegSetThreadName(&quot;idle&quot;);
 (gdb) &lt;strong&gt;x 0x40011024&lt;/strong&gt;
 0x40011024:    0x0000067c
 (gdb) &lt;strong&gt;x 0x40011024&lt;/strong&gt;
@@ -125,37 +121,25 @@ at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
 (gdb) &lt;strong&gt;x 0x40011024&lt;/strong&gt;
 0x40011024:    0x00000774
 (gdb)
-</code></pre></div></div>
-
-<p>The value is changing - that’s a good start! Note that I didn’t have to continue the program to see the timer incrementing - it runs even though the debugger has stopped execution! Also, the timer never seems to set the top 4 bits, which suggests it’s resetting at some value before it overflows its 16 bits. This maximum value should be 32MHz*64μs=0x800, so it’s looking good.</p>
-
-<p>There’s <a href="http://www.st.com/internet/com/TECHNICAL_RESOURCES/TECHNICAL_LITERATURE/APPLICATION_NOTE/DM00042534.pdf">an application note discussing the timers in the STM32 chips</a>, and reading that closely it looks like I’ve been confusing the “output compare” mode and the PWM mode.  I think in the AVR these are essentially the same, but in the STM32 there doesn’t look like there’s a way to reset the pin upon overflow when in output compare mode (so this mode doesn’t seem to be that useful to me, apart from one-shot events).  The <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/pwm__lld_8c_source.html#l00367">ChibiOS PWM code</a> is worth looking at too.</p>
-
-<p>A few days have passed since I did the above bit…</p>
-
-<p>I read the reference on GPIOs a bit more. I would have guessed that since I told the chip to connect to the timer, the timer would look after that pin. But after reading section 6.3.2 of the datasheet about configuring pins for the alternate function, it looks like there’s a AFR register to set. Figure 18 suggests I need to set the AFRH register to “3” to enable the timer on this pin. I added these lines:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  GPIOB-&gt;AFRH &amp;= ~GPIO_AFRH_AFRH9;
+</code></pre>
+<p>The value is changing - that's a good start! Note that I didn't have to continue the program to see the timer incrementing - it runs even though the debugger has stopped execution! Also, the timer never seems to set the top 4 bits, which suggests it's resetting at some value before it overflows its 16 bits. This maximum value should be 32MHz*64μs=0x800, so it's looking good.</p>
+<p>There's <a href="http://www.st.com/internet/com/TECHNICAL_RESOURCES/TECHNICAL_LITERATURE/APPLICATION_NOTE/DM00042534.pdf">an application note discussing the timers in the STM32 chips</a>, and reading that closely it looks like I've been confusing the &quot;output compare&quot; mode and the PWM mode.  I think in the AVR these are essentially the same, but in the STM32 there doesn't look like there's a way to reset the pin upon overflow when in output compare mode (so this mode doesn't seem to be that useful to me, apart from one-shot events).  The <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/pwm__lld_8c_source.html#l00367">ChibiOS PWM code</a> is worth looking at too.</p>
+<p>A few days have passed since I did the above bit...</p>
+<p>I read the reference on GPIOs a bit more. I would have guessed that since I told the chip to connect to the timer, the timer would look after that pin. But after reading section 6.3.2 of the datasheet about configuring pins for the alternate function, it looks like there's a AFR register to set. Figure 18 suggests I need to set the AFRH register to &quot;3&quot; to enable the timer on this pin. I added these lines:</p>
+<pre><code>  GPIOB-&gt;AFRH &amp;= ~GPIO_AFRH_AFRH9;
   GPIOB-&gt;AFRH |= 0x3 &lt;&lt; 4; // ChibiOS doesn't seem to have constants for these
-</code></pre></div></div>
-
-<p>and finally I get some output! The timing looks right, but there’s some strange stuff happening with the amplitude of this waveform. I’m hoping it’s aliasing with my DSO, so hopefully I’ll get to use a CRO in a few days to confirm this. I made the timings a bit longer, and it didn’t look as bad, but maybe there’s some other aliasing going on with the clocks in the chip.</p>
-
-<p>Another problem is that the waveform is the wrong way around! There seem to be two settings that affect this: the OC1M bits in CCMR1, which say whether the waveform is active when the counter is less than the compare register; the other specifies the polarity of the output. Maybe I only have to change one of these? It seems odd to have two registers which do mostly the same thing. I’ll change the polarity in CC1P.</p>
-
-<div class="content-image">
-<a href="/images/wp/2012-10-16-coding-pwm-on-the-stm32l/stm32_tv_hsync.jpg">
-<img src="/" alt="" srcset=" /images/wp/2012-10-16-coding-pwm-on-the-stm32l/stm32_tv_hsync.jpg 400w" sizes="400px" />
+</code></pre>
+<p>and finally I get some output! The timing looks right, but there's some strange stuff happening with the amplitude of this waveform. I'm hoping it's aliasing with my DSO, so hopefully I'll get to use a CRO in a few days to confirm this. I made the timings a bit longer, and it didn't look as bad, but maybe there's some other aliasing going on with the clocks in the chip.</p>
+<p>Another problem is that the waveform is the wrong way around! There seem to be two settings that affect this: the OC1M bits in CCMR1, which say whether the waveform is active when the counter is less than the compare register; the other specifies the polarity of the output. Maybe I only have to change one of these? It seems odd to have two registers which do mostly the same thing. I'll change the polarity in CC1P.</p>
+<div class='content-image'>
+<a href='/images/wp/2012-10-16-coding-pwm-on-the-stm32l/stm32_tv_hsync.jpg'>
+<img src="/" alt="" srcset=" /images/wp/2012-10-16-coding-pwm-on-the-stm32l/stm32_tv_hsync.jpg 400w" sizes="400px">
 </a>
 </div>
-
-<p>That’s looking better! I swapped CCER and OC1M around, and the output looked the same.</p>
-
-<p>I noticed that the signal doesn’t rise very quickly. Looking through the GPIO registers again, I got the OTYPER setting wrong which made it open drain. Changing this around fixed this problem.</p>
-
-<p>So here’s my complete code:</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  rccEnableAPB2(RCC_APB2ENR_TIM11EN, 0); // Enable TIM11 clock, run at SYSCLK
+<p>That's looking better! I swapped CCER and OC1M around, and the output looked the same.</p>
+<p>I noticed that the signal doesn't rise very quickly. Looking through the GPIO registers again, I got the OTYPER setting wrong which made it open drain. Changing this around fixed this problem.</p>
+<p>So here's my complete code:</p>
+<pre><code>  rccEnableAPB2(RCC_APB2ENR_TIM11EN, 0); // Enable TIM11 clock, run at SYSCLK
 
   // TIM11 outputs on PA7, PB9 or PB15
   GPIOB-&gt;OTYPER &amp;= ~GPIO_OTYPER_OT_9;        // Push-pull output
@@ -178,8 +162,7 @@ at /opt/ChibiOS_2.4.2/os/kernel/src/chsys.c:62
   TIM11-&gt;CCR1 = STM32_SYSCLK * 0.0000047; // hsync pulse duration
 
   TIM11-&gt;CR1 |= TIM_CR1_CEN; // enable the counter
-</code></pre></div></div>
-
+</code></pre>
 <p>Next <a href="http://sourcegate.wordpress.com/2012/10/18/starting-on-the-vsync-interrupts/">I need an interrupt when the signal goes low</a>, so I can adjust the signal timings for the vertical sync.</p>
 
 

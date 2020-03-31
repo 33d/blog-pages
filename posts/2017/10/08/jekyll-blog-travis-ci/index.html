@@ -43,60 +43,46 @@
 
   <article class="post-content">
   
-  <p>With the demise of Openshift Online and its free tier, I was looking for somewhere else to host my blog.  Even though it’s a <a href="https://jekyllrb.com/">Jekyll</a> blog, it does some image resizing, so I can’t use Github’s native builder.  I should be able to use <a href="https://travis-ci.org/">Travis CI</a> though, then push them to another Github repository for <a href="https://help.github.com/categories/github-pages-basics/">Pages</a> hosting.</p>
-
-<p>The <a href="https://docs.travis-ci.com/user/deployment/pages/">Travis instructions for Github Pages</a> instructions suggest you use Github personal access tokens for authentication, but that seems to give write access to all of my Github repositories - which I don’t want to do.</p>
-
+  <p>With the demise of Openshift Online and its free tier, I was looking for somewhere else to host my blog.  Even though it's a <a href="https://jekyllrb.com/">Jekyll</a> blog, it does some image resizing, so I can't use Github's native builder.  I should be able to use <a href="https://travis-ci.org/">Travis CI</a> though, then push them to another Github repository for <a href="https://help.github.com/categories/github-pages-basics/">Pages</a> hosting.</p>
+<p>The <a href="https://docs.travis-ci.com/user/deployment/pages/">Travis instructions for Github Pages</a> instructions suggest you use Github personal access tokens for authentication, but that seems to give write access to all of my Github repositories - which I don't want to do.</p>
 <p>You will need the <a href="https://github.com/travis-ci/travis.rb">command line client</a> installed and logged in.</p>
-
 <ol>
-  <li>
-    <p>Generate a key pair for Travis to use when pushing</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ssh-keygen -t rsa -b 4096 -f travis-key
-</code></pre></div>    </div>
-
-    <p>Don’t commit the generated files!</p>
-  </li>
-  <li>
-    <p>Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in <code class="highlighter-rouge">travis-key.pub</code> which you generated in the previous step, check “Enable write access”, then add the key.</p>
-  </li>
-  <li>
-    <p>The private key should be <a href="https://docs.travis-ci.com/user/encrypting-files/">encrypted</a>.  From the blog repository:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> travis encrypt-file -r 33d/blog travis-key
-</code></pre></div>    </div>
-
-    <p>where <code class="highlighter-rouge">travis-key</code> is one of the files created earlier by <code class="highlighter-rouge">ssh-keygen</code>.</p>
-
-    <p>This command will suggest you add a line to your <code class="highlighter-rouge">before_install</code> section - do that.</p>
-  </li>
-  <li>
-    <p>Put at the end of <code class="highlighter-rouge">.travis.yml</code>’s <code class="highlighter-rouge">before_install</code>, to stop <code class="highlighter-rouge">ssh-add</code> complaining about the key’s permissions:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> - chmod 400 ../travis-key
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>Add this to <code class="highlighter-rouge">.travis.yml</code>, to perform the Git push:</p>
-
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> after_success:
-  - eval "$(ssh-agent -s)"
-  - ssh-add ../travis-key
-  - git clone git@github.com:33d/blog-pages.git target
-  - cp -pr _site/* target
-  - git -C target checkout -b gh-pages
-  - git -C target add .
-  - git -C target commit -m "$( date --utc --iso-8601=seconds )"
-  - git -C target push --force origin gh-pages
-</code></pre></div>    </div>
-
-    <p>I use a different repository for this, because I don’t want the build artifacts clogging the blog repository.</p>
-  </li>
+<li>
+<p>Generate a key pair for Travis to use when pushing</p>
+<pre><code> ssh-keygen -t rsa -b 4096 -f travis-key
+</code></pre>
+<p>Don't commit the generated files!</p>
+</li>
+<li>
+<p>Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in <code>travis-key.pub</code> which you generated in the previous step, check &quot;Enable write access&quot;, then add the key.</p>
+</li>
+<li>
+<p>The private key should be <a href="https://docs.travis-ci.com/user/encrypting-files/">encrypted</a>.  From the blog repository:</p>
+<pre><code> travis encrypt-file -r 33d/blog travis-key
+</code></pre>
+<p>where <code>travis-key</code> is one of the files created earlier by <code>ssh-keygen</code>.</p>
+<p>This command will suggest you add a line to your <code>before_install</code> section - do that.</p>
+</li>
+<li>
+<p>Put at the end of <code>.travis.yml</code>'s <code>before_install</code>, to stop <code>ssh-add</code> complaining about the key's permissions:</p>
+<pre><code> - chmod 400 ../travis-key
+</code></pre></li>
+<li>
+<p>Add this to <code>.travis.yml</code>, to perform the Git push:</p>
+<pre><code>after_success:
+ - eval &quot;$(ssh-agent -s)&quot;
+ - ssh-add ../travis-key
+ - git clone git@github.com:33d/blog-pages.git target
+ - cp -pr _site/* target
+ - git -C target checkout -b gh-pages
+ - git -C target add .
+ - git -C target commit -m &quot;$( date --utc --iso-8601=seconds )&quot;
+ - git -C target push --force origin gh-pages
+</code></pre>
+<p>I use a different repository for this, because I don't want the build artifacts clogging the blog repository.</p>
+</li>
 </ol>
-
-<p>You can see <a href="https://github.com/33d/blog/blob/blog/.travis.yml">my completed <code class="highlighter-rouge">.travis.yml</code> file</a>.</p>
-
+<p>You can see <a href="https://github.com/33d/blog/blob/blog/.travis.yml">my completed <code>.travis.yml</code> file</a>.</p>
 
 
     <div id="comment_count"></div>

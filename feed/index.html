@@ -5,38 +5,32 @@
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</description>
     <link>http://yourdomain.com/</link>
     <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 31 Mar 2020 09:41:22 +0000</pubDate>
-    <lastBuildDate>Tue, 31 Mar 2020 09:41:22 +0000</lastBuildDate>
+    <pubDate>Tue, 31 Mar 2020 09:43:43 +0000</pubDate>
+    <lastBuildDate>Tue, 31 Mar 2020 09:43:43 +0000</lastBuildDate>
     <generator>Jekyll v3.8.6</generator>
     
       <item>
         <title>Cyber FastTrack 2020 Forensics RH01 challenge</title>
         <description>&lt;p&gt;This is the RH01 challenge from Cyber FastTrack Spring 2020.&lt;/p&gt;
-
 &lt;blockquote&gt;
-  &lt;p&gt;We received this file, our analysts believe it is too random to be solved. Can you do anything with this?&lt;/p&gt;
+&lt;p&gt;We received this file, our analysts believe it is too random to be solved. Can you do anything with this?&lt;/p&gt;
 &lt;/blockquote&gt;
-
 &lt;p&gt;the target file:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;2b991035290d99b2fbf37fb54320ad6ce84b136d  rh01.zip
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;pre&gt;&lt;code&gt;2b991035290d99b2fbf37fb54320ad6ce84b136d  rh01.zip
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The program asks for three numbers, then produces a message that the numbers were wrong.&lt;/p&gt;
-
-&lt;p&gt;I haven’t done much reverse engineering before, but knew about Ghidra, and blundered by way into opening the binary in that, searching for the last message, then looking at the routine which produces it.  When you look at a routine in Ghidra, it shows a psuedo-C implementation of it, so I could see what was going on:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  FUN_000108a1(&quot;I\'m thinking of three random numbers, guess which three:&quot;);
+&lt;p&gt;I haven't done much reverse engineering before, but knew about Ghidra, and blundered by way into opening the binary in that, searching for the last message, then looking at the routine which produces it.  When you look at a routine in Ghidra, it shows a psuedo-C implementation of it, so I could see what was going on:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;  FUN_000108a1(&amp;quot;I\'m thinking of three random numbers, guess which three:&amp;quot;);
   local_44 = 0;
   while (local_44 &amp;lt; 3) {
-    printf(&quot;\nnumber %d:&quot;,local_44 + 1);
+    printf(&amp;quot;\nnumber %d:&amp;quot;,local_44 + 1);
     __isoc99_scanf(&amp;amp;DAT_00010c21,local_20 + local_44 * 4);
     local_44 = local_44 + 1;
   }
   uVar2 = memcmp(&amp;amp;local_2c,local_20,0xc);
   iVar3 = memcmp(&amp;amp;local_2c,local_20,0xc);
   if (iVar3 != 0) {
-    printf(&quot;\nI was actually thinking of %d, %d and %d.\n&quot;,local_2c,local_28,local_24);
+    printf(&amp;quot;\nI was actually thinking of %d, %d and %d.\n&amp;quot;,local_2c,local_28,local_24);
                     /* WARNING: Subroutine does not return */
     exit(0);
   }
@@ -46,54 +40,37 @@
     uVar2 = FUN_00010b40();
   }
   return uVar2;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;What I think is going on:&lt;/p&gt;
-
 &lt;ul&gt;
-  &lt;li&gt;Three numbers are typed in, they’re stored as 4 bytes each after &lt;code class=&quot;highlighter-rouge&quot;&gt;local_20&lt;/code&gt;.  (It looks like the number is some local variable offset, perhaps relative to the stack pointer when the function is running.)&lt;/li&gt;
-  &lt;li&gt;12 bytes are compared - those from the numbers typed in, to another 12 bytes where the first 4 is a number produced by &lt;code class=&quot;highlighter-rouge&quot;&gt;rand()&lt;/code&gt;, but I don’t know what’s in the other 8 bytes.&lt;/li&gt;
-  &lt;li&gt;The result of memcmp - which should be 0 if the numbers are correct - are passed to another function.&lt;/li&gt;
+&lt;li&gt;Three numbers are typed in, they're stored as 4 bytes each after &lt;code&gt;local_20&lt;/code&gt;.  (It looks like the number is some local variable offset, perhaps relative to the stack pointer when the function is running.)&lt;/li&gt;
+&lt;li&gt;12 bytes are compared - those from the numbers typed in, to another 12 bytes where the first 4 is a number produced by &lt;code&gt;rand()&lt;/code&gt;, but I don't know what's in the other 8 bytes.&lt;/li&gt;
+&lt;li&gt;The result of memcmp - which should be 0 if the numbers are correct - are passed to another function.&lt;/li&gt;
 &lt;/ul&gt;
-
-&lt;p&gt;A good start is to simply replace the branch with one which doesn’t exit.  When I put the cursor on the comparison, I see a &lt;code class=&quot;highlighter-rouge&quot;&gt;JNZ&lt;/code&gt; (jump if not zero) instruction.  I used a hex editor to replace it (&lt;code class=&quot;highlighter-rouge&quot;&gt;75 24&lt;/code&gt;) with a JZ (jump if zero) instruction (&lt;code class=&quot;highlighter-rouge&quot;&gt;74 24&lt;/code&gt;).&lt;/p&gt;
-
-&lt;p&gt;This seems to have worked, but now displays some garbage after typing the numbers in.  I suspect the flag is unscrambled using some of the numbers, by that last function.  But if the number comparison succeeds, the &lt;code class=&quot;highlighter-rouge&quot;&gt;memcmp&lt;/code&gt;s will return 0, which are passed to that function.  How can I change this?&lt;/p&gt;
-
+&lt;p&gt;A good start is to simply replace the branch with one which doesn't exit.  When I put the cursor on the comparison, I see a &lt;code&gt;JNZ&lt;/code&gt; (jump if not zero) instruction.  I used a hex editor to replace it (&lt;code&gt;75 24&lt;/code&gt;) with a JZ (jump if zero) instruction (&lt;code&gt;74 24&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;This seems to have worked, but now displays some garbage after typing the numbers in.  I suspect the flag is unscrambled using some of the numbers, by that last function.  But if the number comparison succeeds, the &lt;code&gt;memcmp&lt;/code&gt;s will return 0, which are passed to that function.  How can I change this?&lt;/p&gt;
 &lt;p&gt;The function call looks like:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        00010a73 ff 75 d4        PUSH       dword ptr [EBP + local_34]
+&lt;pre&gt;&lt;code&gt;        00010a73 ff 75 d4        PUSH       dword ptr [EBP + local_34]
         00010a76 ff 75 d8        PUSH       dword ptr [EBP + local_30]
         00010a79 e8 8f fc        CALL       FUN_0001070d
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Two local numbers are pushed on to the stack, then the function is called.  Perhaps I can put zeroes on the stack instead.&lt;/p&gt;
-
-&lt;p&gt;First I need the instructions for this.  Can &lt;code class=&quot;highlighter-rouge&quot;&gt;nasm&lt;/code&gt; easily do this, or does it require sections and other stuff I don’t know much about?  Let’s see what happens:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ echo 'push 0' &amp;gt; zero.asm
+&lt;p&gt;First I need the instructions for this.  Can &lt;code&gt;nasm&lt;/code&gt; easily do this, or does it require sections and other stuff I don't know much about?  Let's see what happens:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ echo 'push 0' &amp;gt; zero.asm
 $ nasm -o zero zero.asm
 $ hd zero
 00000000  6a 00                                             |j.|
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;If I look at &lt;a href=&quot;http://sparksandflames.com/files/x86InstructionChart.html&quot;&gt;a x86 opcode table&lt;/a&gt;, 6a is indeed &lt;code class=&quot;highlighter-rouge&quot;&gt;PUSH&lt;/code&gt;.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If I look at &lt;a href=&quot;http://sparksandflames.com/files/x86InstructionChart.html&quot;&gt;a x86 opcode table&lt;/a&gt;, 6a is indeed &lt;code&gt;PUSH&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;There original pushes were 6 bytes, now there are 4; something needs to fill the last two bytes.  NOPs will do, which is the value 90.&lt;/p&gt;
-
-&lt;p&gt;So I’ll replace:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ff 75 d4 ff 75 d8
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;p&gt;So I'll replace:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;ff 75 d4 ff 75 d8
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;with&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;6a 00 6a 00 90 90
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;pre&gt;&lt;code&gt;6a 00 6a 00 90 90
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;and see what happens:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ ./RH01
+&lt;pre&gt;&lt;code&gt;$ ./RH01
 I'm thinking of three random numbers, guess which three:
 number 1:1
 
@@ -102,10 +79,8 @@ number 2:1
 number 3:1
 Wait, how did you do that? I thought I was totally random...
 Flag: Sow_The_Seeds_Of_Doubt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Not bad for a first effort!&lt;/p&gt;
-
 </description>
         <pubDate>Sat, 28 Mar 2020 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2020/03/28/cyber-fasttrack-spring-2020-rh01/</link>
@@ -117,44 +92,32 @@ Flag: Sow_The_Seeds_Of_Doubt
       <item>
         <title>Cyber FastTrack 2020 Forensics HF05 challenge</title>
         <description>&lt;p&gt;This is challenge HF05 from the Cyber FastTrack Spring 2020 challenges.&lt;/p&gt;
-
 &lt;p&gt;The challenge:&lt;/p&gt;
-
 &lt;blockquote&gt;
-  &lt;p&gt;The attacker created a shared folder on the victims machine. Find this folder and give us the absolute path of the directory, including drive letter.&lt;/p&gt;
-
-  &lt;p&gt;files.allyourbases.co/fi02.zip&lt;/p&gt;
+&lt;p&gt;The attacker created a shared folder on the victims machine. Find this folder and give us the absolute path of the directory, including drive letter.&lt;/p&gt;
+&lt;p&gt;files.allyourbases.co/fi02.zip&lt;/p&gt;
 &lt;/blockquote&gt;
-
 &lt;p&gt;These are the files:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sha1sum fi02.zip memory-image.vmem 
+&lt;pre&gt;&lt;code&gt;$ sha1sum fi02.zip memory-image.vmem 
 78c544a8e5cbb9764fd009760a7e4e3ae035db6a  fi02.zip
 7ea854fc529c7517dedbdf0c287a3c4e2a7f3903  memory-image.vmem
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Volatility is a memory forensics tool which apparently comes with Kali - I’ve never used any tools like this before, so that will do for startes.&lt;/p&gt;
-
-&lt;p&gt;It turns out it &lt;em&gt;doesn’t&lt;/em&gt; come with Kali.  To get volatility working in Kali, I found it easiest to download it from the web site, extract it, and create an alias to it:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cd /tmp
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Volatility is a memory forensics tool which apparently comes with Kali - I've never used any tools like this before, so that will do for startes.&lt;/p&gt;
+&lt;p&gt;It turns out it &lt;em&gt;doesn't&lt;/em&gt; come with Kali.  To get volatility working in Kali, I found it easiest to download it from the web site, extract it, and create an alias to it:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ cd /tmp
 $ wget 'http://downloads.volatilityfoundation.org/releases/2.6/volatility_2.6_lin64_standalone.zip'
 $ unzip volatility_2.6_lin64_standalone.zip 
 $ cd volatility_2.6_lin64_standalone/
 $ alias vol=/tmp/volatility_2.6_lin64_standalone/volatility_2.6_lin64_standalone 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Start by identifying the image:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol imageinfo -f memory-image.vmem 
+&lt;pre&gt;&lt;code&gt;$ vol imageinfo -f memory-image.vmem 
 Volatility Foundation Volatility Framework 2.6
 INFO    : volatility.debug    : Determining profile based on KDBG search...
           Suggested Profile(s) : Win7SP1x64, Win7SP0x64, Win2008R2SP0x64, Win2008R2SP1x64_23418, Win2008R2SP1x64, Win7SP1x64_23418
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I’ll guess &lt;code class=&quot;highlighter-rouge&quot;&gt;Win7SP1x64&lt;/code&gt; for starters.  See whether this works:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol --profile=Win7SP1x64 pslist -f memory-image.vmem 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I'll guess &lt;code&gt;Win7SP1x64&lt;/code&gt; for starters.  See whether this works:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol --profile=Win7SP1x64 pslist -f memory-image.vmem 
 Volatility Foundation Volatility Framework 2.6
 Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wow64 Start                          Exit                          
 ------------------ -------------------- ------ ------ ------ -------- ------ ------ ------------------------------ ------------------------------
@@ -162,48 +125,34 @@ Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wo
 0xfffffa8001a5b440 smss.exe                268      4      2       29 ------      0 2019-09-05 14:39:08 UTC+0000                                 
 0xfffffa8002cadb30 csrss.exe               368    344      8      402      0      0 2019-09-05 14:39:23 UTC+0000                                 
 0xfffffa8002d34b30 wininit.exe             420    344      3       74      0      0 2019-09-05 14:39:23 UTC+0000                                 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Typing the –profile and -f is going to get annoying.  These can go in environment files instead:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ export VOLATILITY_PROFILE=Win7SP1x64
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Typing the --profile and -f is going to get annoying.  These can go in environment files instead:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ export VOLATILITY_PROFILE=Win7SP1x64
 $ export VOLATILITY_LOCATION=file:///tmp/memory-image.vmem
 $ vol pslist
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;The last command shows that the environment variables are working.&lt;/p&gt;
-
 &lt;p&gt;How can I find the share?  Maybe the attacker used a console?&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol consoles
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;There’s some things like IP addresses there, and commands which I guess disable the firewall:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;c:\Users\Redacted\Desktop\IT Support Software&amp;gt;NetSh Advfirewall set allprofiles state off                                                     
+&lt;pre&gt;&lt;code&gt;$ vol consoles
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;There's some things like IP addresses there, and commands which I guess disable the firewall:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;c:\Users\Redacted\Desktop\IT Support Software&amp;gt;NetSh Advfirewall set allprofiles state off                                                     
 Ok.
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;and the actual version of Windows (&lt;a href=&quot;https://www.gaijin.at/en/infos/windows-version-numbers&quot;&gt;a quick search&lt;/a&gt; tells us it’s Windows 7 service pack 1, so my guess might have been correct):&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Microsoft Windows [Version 6.1.7601]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;and the actual version of Windows (&lt;a href=&quot;https://www.gaijin.at/en/infos/windows-version-numbers&quot;&gt;a quick search&lt;/a&gt; tells us it's Windows 7 service pack 1, so my guess might have been correct):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Microsoft Windows [Version 6.1.7601]
 Copyright (c) 2009 Microsoft Corporation.  All rights reserved.            
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;but other than that, nothing stands out.&lt;/p&gt;
-
 &lt;p&gt;I guess Windows would keep its file shares in the registry.  I used a web search to find out where these are, and tried to find that key:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'System\CurrentcontrolSet\Services\Lanmanserver\Shares'
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'System\CurrentcontrolSet\Services\Lanmanserver\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;That’s no good… does that command work at all?  I’ll try something from the manual:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'Microsoft\Security Center\Svc'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That's no good... does that command work at all?  I'll try something from the manual:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'Microsoft\Security Center\Svc'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -218,11 +167,9 @@ Subkeys:
 Values:
 REG_QWORD     VistaSp1        : (S) 128920218544262440
 REG_DWORD     AntiVirusOverride : (S) 0
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;That seems to work.  I notice that there’s some &lt;code class=&quot;highlighter-rouge&quot;&gt;CurrentControlSet&lt;/code&gt; stuff in the share query.  I have a feeling that Windows somehow maps this somewhere else in the registry, &lt;a href=&quot;https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_LOCAL_MACHINE/System/CurrentControlSet/index&quot;&gt;which is correct&lt;/a&gt;.  Searching for &lt;code class=&quot;highlighter-rouge&quot;&gt;SYSTEM\ControlSet001&lt;/code&gt; found nothing, but on a hunch I tried just &lt;code class=&quot;highlighter-rouge&quot;&gt;ControlSet001&lt;/code&gt;:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That seems to work.  I notice that there's some &lt;code&gt;CurrentControlSet&lt;/code&gt; stuff in the share query.  I have a feeling that Windows somehow maps this somewhere else in the registry, &lt;a href=&quot;https://renenyffenegger.ch/notes/Windows/registry/tree/HKEY_LOCAL_MACHINE/System/CurrentControlSet/index&quot;&gt;which is correct&lt;/a&gt;.  Searching for &lt;code&gt;SYSTEM\ControlSet001&lt;/code&gt; found nothing, but on a hunch I tried just &lt;code&gt;ControlSet001&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -239,29 +186,23 @@ Subkeys:
   (S) services
 
 Values:
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;That’s looking more interesting!  Let’s see whether that helps:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'Services\LanmanServer\Shares'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That's looking more interesting!  Let's see whether that helps:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'Services\LanmanServer\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;maybe just the end will do?&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'Shares'
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
 The requested key could not be found in the hive(s) searched
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I also noticed what &lt;code class=&quot;highlighter-rouge&quot;&gt;CurrentControlSet&lt;/code&gt; does:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'CurrentControlSet'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I also noticed what &lt;code&gt;CurrentControlSet&lt;/code&gt; does:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'CurrentControlSet'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -274,11 +215,9 @@ Subkeys:
 
 Values:
 REG_LINK      SymbolicLinkValue : (V) \Registry\Machine\System\ControlSet001
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I should have a closer look at the output: ControlSet001 lists a subkey of “services”.&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I should have a closer look at the output: ControlSet001 lists a subkey of &amp;quot;services&amp;quot;.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -296,11 +235,9 @@ Subkeys:
   (S) LanmanWorkstation
   (S) ldap
 ...
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I’ll keep digging:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services\LanmanServer'
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I'll keep digging:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services\LanmanServer'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -333,9 +270,7 @@ REG_BINARY    FailureActions  : (S)
 0x00000000  80 51 01 00 00 00 00 00 00 00 00 00 03 00 00 00   .Q..............
 0x00000010  14 00 00 00 01 00 00 00 60 ea 00 00 01 00 00 00   ........`.......
 0x00000020  c0 d4 01 00 00 00 00 00 00 00 00 00               ............
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services\LanmanServer\Shares'
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;$ vol printkey -K 'ControlSet001\services\LanmanServer\Shares'
 Volatility Foundation Volatility Framework 2.6
 Legend: (S) = Stable   (V) = Volatile
 
@@ -349,10 +284,8 @@ Subkeys:
 
 Values:
 REG_MULTI_SZ  exfil           : (S) ['CSCFlags=0', 'MaxUses=4294967295', 'Path=c:\\recyc1e_bin', 'Permissions=63', 'ShareName=exfil', 'Type=0', '', '']
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;c:\recycle_bin&lt;/code&gt; is correct!  I’m happy with about half an hour for a beginner, and I didn’t hit any dead ends.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;c:\recycle_bin&lt;/code&gt; is correct!  I'm happy with about half an hour for a beginner, and I didn't hit any dead ends.&lt;/p&gt;
 </description>
         <pubDate>Fri, 27 Mar 2020 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2020/03/27/cyber-fasttrack-spring-2020-fh05/</link>
@@ -364,24 +297,19 @@ REG_MULTI_SZ  exfil           : (S) ['CSCFlags=0', 'MaxUses=4294967295', 'Path=c
       <item>
         <title>Cyber FastTrack 2020 Forensics FE01 challenge</title>
         <description>&lt;p&gt;This is a challenge from Cyber FastTrack Spring 2020, using the same image as FH05.&lt;/p&gt;
-
 &lt;blockquote&gt;
-  &lt;p&gt;Take a look at the memory image provided and see if you can see what was written on Notepad while it was open on the user’s screen.&lt;/p&gt;
+&lt;p&gt;Take a look at the memory image provided and see if you can see what was written on Notepad while it was open on the user's screen.&lt;/p&gt;
 &lt;/blockquote&gt;
-
 &lt;p&gt;A good place to start might be to look at the memory for notepad?&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol pslist
+&lt;pre&gt;&lt;code&gt;$ vol pslist
 Volatility Foundation Volatility Framework 2.6
 Offset(V)          Name                    PID   PPID   Thds     Hnds   Sess  Wow64 Start                          Exit                          
 ------------------ -------------------- ------ ------ ------ -------- ------ ------ ------------------------------ ------------------------------
 ...
 0xfffffa8002642610 notepad.exe            2740    612      1       57      1      0 2019-09-05 15:33:20 UTC+0000 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I’ll start by dumping the memory:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ mkdir dump
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I'll start by dumping the memory:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ mkdir dump
  vol procdump -D dump/ -p 2740
 Volatility Foundation Volatility Framework 2.6
 Process(V)         ImageBase          Name                 Result
@@ -390,24 +318,18 @@ Process(V)         ImageBase          Name                 Result
 $ xxd dump/executable.2740.exe |less
 $ ls -al dump/executable.2740.exe 
 -rw-r--r-- 1 kali kali 193536 Mar 26 16:48 dump/executable.2740.exe
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Not too big.  Normally I’d use &lt;code class=&quot;highlighter-rouge&quot;&gt;strings&lt;/code&gt; on something like this, but Windows has a habit of using UTF-16 to store text, so I thought this command won’t help - but the &lt;code class=&quot;highlighter-rouge&quot;&gt;-el&lt;/code&gt; option does just that!  It didn’t show anything interesting though.&lt;/p&gt;
-
-&lt;p&gt;There’s a screenshot command! That would be too easy if it worked…&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ mkdir shots
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Not too big.  Normally I'd use &lt;code&gt;strings&lt;/code&gt; on something like this, but Windows has a habit of using UTF-16 to store text, so I thought this command won't help - but the &lt;code&gt;-el&lt;/code&gt; option does just that!  It didn't show anything interesting though.&lt;/p&gt;
+&lt;p&gt;There's a screenshot command! That would be too easy if it worked...&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ mkdir shots
 $ vol screenshot -D shots
 Volatility Foundation Volatility Framework 2.6
 Wrote shots/session_0.Service-0x0-3e4$.Default.png
 Wrote shots/session_0.Service-0x0-3e5$.Default.png
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;No luck, but there is one image which shows where notepad and cmd.exe is on the display.&lt;/p&gt;
-
-&lt;p&gt;There’s a &lt;code class=&quot;highlighter-rouge&quot;&gt;wintree&lt;/code&gt; command, which shows the GUI components:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ vol wintree
+&lt;p&gt;There's a &lt;code&gt;wintree&lt;/code&gt; command, which shows the GUI components:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ vol wintree
 ...
 Untitled - Notepad (visible) notepad.exe:2740 Notepad
 ..#50188  notepad.exe:2740 6.0.7601.17514!msctls_statusbar32
@@ -415,15 +337,11 @@ Untitled - Notepad (visible) notepad.exe:2740 Notepad
 .Default IME  notepad.exe:2740 IME
 .MSCTFIME UI  notepad.exe:2740 MSCTFIME UI
 
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Maybe “edit” controls are what’s used to enter text?&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Maybe &amp;quot;edit&amp;quot; controls are what's used to enter text?&lt;/p&gt;
 &lt;p&gt;I spent a while trying to get the contents of the controls, then I wondered whether there was some memory not being dumped earlier, but no luck after an hour or so.&lt;/p&gt;
-
-&lt;p&gt;I looked through the list of commands (in the README, not the wiki) and noticed the &lt;code class=&quot;highlighter-rouge&quot;&gt;editbox&lt;/code&gt; command:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; vol editbox
+&lt;p&gt;I looked through the list of commands (in the README, not the wiki) and noticed the &lt;code&gt;editbox&lt;/code&gt; command:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; vol editbox
 Volatility Foundation Volatility Framework 2.6
 ******************************
 Wnd Context       : 1\WinSta0\Default
@@ -442,10 +360,8 @@ address-of undoBuf: 0x354740
 undoBuf           : qay
 -------------------------
 flag:noting_notes_in_a_noting_way
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;That’s a bit annoying.  I would like to know how to get this using more generic commands, but I don’t know anything about Windows user interfaces and there would be plenty to learn there first.  This does make sense that an older application like notepad would use the control itself for storing its data, so it wouldn’t appear in the memory space.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;That's a bit annoying.  I would like to know how to get this using more generic commands, but I don't know anything about Windows user interfaces and there would be plenty to learn there first.  This does make sense that an older application like notepad would use the control itself for storing its data, so it wouldn't appear in the memory space.&lt;/p&gt;
 </description>
         <pubDate>Fri, 27 Mar 2020 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2020/03/27/cyber-fasttrack-spring-2020-fe01/</link>
@@ -456,20 +372,15 @@ flag:noting_notes_in_a_noting_way
     
       <item>
         <title>Serial LIRC devices on recent Ubuntu releases</title>
-        <description>&lt;p&gt;I tried to get a “homebrew” infrared receiver attached to the DCD line of a serial port working on Ubuntu Bionic.  It seems that things have changed since Ubuntu 12.04, when I last had it working.&lt;/p&gt;
-
+        <description>&lt;p&gt;I tried to get a &amp;quot;homebrew&amp;quot; infrared receiver attached to the DCD line of a serial port working on Ubuntu Bionic.  It seems that things have changed since Ubuntu 12.04, when I last had it working.&lt;/p&gt;
 &lt;p&gt;The changes ended up being:&lt;/p&gt;
-
 &lt;ul&gt;
-  &lt;li&gt;The kernel modules are in the mainline kernel, but aren’t supplied with Ubuntu&lt;/li&gt;
-  &lt;li&gt;The LIRC driver’s name has changed from “serial” to “default”&lt;/li&gt;
+&lt;li&gt;The kernel modules are in the mainline kernel, but aren't supplied with Ubuntu&lt;/li&gt;
+&lt;li&gt;The LIRC driver's name has changed from &amp;quot;serial&amp;quot; to &amp;quot;default&amp;quot;&lt;/li&gt;
 &lt;/ul&gt;
-
-&lt;p&gt;My first problem is that the receiver wasn’t working in the first place.  I attached a DSO Nano to the data line, and noticed that the signal didn’t have a high enough voltage to trigger the serial port.  The &lt;a href=&quot;https://www.mouser.com/ds/2/348/rpm6900-313874.pdf&quot;&gt;data sheet&lt;/a&gt; shows the receiver’s output being a pull-up resistor with a transistor pulling the output low; maybe this serial port draws a particularly large amount of current.  I wired a 2.2k resistor between the data line and VCC (which should be within the limits of the receiver), and everything works.&lt;/p&gt;
-
+&lt;p&gt;My first problem is that the receiver wasn't working in the first place.  I attached a DSO Nano to the data line, and noticed that the signal didn't have a high enough voltage to trigger the serial port.  The &lt;a href=&quot;https://www.mouser.com/ds/2/348/rpm6900-313874.pdf&quot;&gt;data sheet&lt;/a&gt; shows the receiver's output being a pull-up resistor with a transistor pulling the output low; maybe this serial port draws a particularly large amount of current.  I wired a 2.2k resistor between the data line and VCC (which should be within the limits of the receiver), and everything works.&lt;/p&gt;
 &lt;p&gt;I tested it with this program, which displays a time when the DCD line changes:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#include &amp;lt;stdio.h&amp;gt;
+&lt;pre&gt;&lt;code&gt;#include &amp;lt;stdio.h&amp;gt;
 #include &amp;lt;unistd.h&amp;gt;
 #include &amp;lt;sys/types.h&amp;gt;
 #include &amp;lt;sys/stat.h&amp;gt;
@@ -483,76 +394,71 @@ flag:noting_notes_in_a_noting_way
     
 int die(const char* msg) {
   perror(msg);
-  printf(&quot;%s\n&quot;, strerror(errno));
+  printf(&amp;quot;%s\n&amp;quot;, strerror(errno));
   exit(1);
 }
 
 int main(void) {
-  int fd = open(&quot;/dev/ttyS0&quot;, 0);
+  int fd = open(&amp;quot;/dev/ttyS0&amp;quot;, 0);
   if (fd == -1)
-    die(&quot;open&quot;);
+    die(&amp;quot;open&amp;quot;);
   while (1) {
     struct timespec tm;
     ioctl(fd, TIOCMIWAIT, TIOCM_CD | TIOCM_RNG | TIOCM_DSR | TIOCM_CTS);
     if (clock_gettime(CLOCK_MONOTONIC, &amp;amp;tm) == -1)
-      die(&quot;clock_gettime&quot;);
-    printf(&quot;%ld\n&quot;, tm.tv_nsec);
+      die(&amp;quot;clock_gettime&amp;quot;);
+    printf(&amp;quot;%ld\n&amp;quot;, tm.tv_nsec);
   }
   close(fd);
   return 0;
 }
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;(So why does LIRC need the kernel driver, if this works in userspace?  I suspect it’s because the LIRC API requires a timeout, which the &lt;code class=&quot;highlighter-rouge&quot;&gt;ioctl&lt;/code&gt; doesn’t support.)&lt;/p&gt;
-
-&lt;p&gt;LIRC’s serial port support works by using a kernel module to read the hardware, and sends the output to &lt;code class=&quot;highlighter-rouge&quot;&gt;/dev/lirc0&lt;/code&gt;.  LIRC connects to this device to read the input.  The LIRC userspace driver that does this is called “default” (it used to be called “serial”).&lt;/p&gt;
-
-&lt;p&gt;It seems a few releases ago the drivers were upstreamed, and aren’t supplied with Ubuntu.  I got the driver installed with DKMS:&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;(So why does LIRC need the kernel driver, if this works in userspace?  I suspect it's because the LIRC API requires a timeout, which the &lt;code&gt;ioctl&lt;/code&gt; doesn't support.)&lt;/p&gt;
+&lt;p&gt;LIRC's serial port support works by using a kernel module to read the hardware, and sends the output to &lt;code&gt;/dev/lirc0&lt;/code&gt;.  LIRC connects to this device to read the input.  The LIRC userspace driver that does this is called &amp;quot;default&amp;quot; (it used to be called &amp;quot;serial&amp;quot;).&lt;/p&gt;
+&lt;p&gt;It seems a few releases ago the drivers were upstreamed, and aren't supplied with Ubuntu.  I got the driver installed with DKMS:&lt;/p&gt;
 &lt;ol&gt;
-  &lt;li&gt;Create a working directory&lt;/li&gt;
-  &lt;li&gt;Put the &lt;a href=&quot;https://elixir.bootlin.com/linux/v4.15.18/source/drivers/media/rc/serial_ir.c&quot;&gt;driver&lt;/a&gt; in it.  (Choose the appropriate version for your kernel.)&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Add this Makefile:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; obj-m += serial_ir.o
+&lt;li&gt;
+&lt;p&gt;Create a working directory&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Put the &lt;a href=&quot;https://elixir.bootlin.com/linux/v4.15.18/source/drivers/media/rc/serial_ir.c&quot;&gt;driver&lt;/a&gt; in it.  (Choose the appropriate version for your kernel.)&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Add this Makefile:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; obj-m += serial_ir.o
 
  all:
  	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
  clean:
  	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Add this &lt;code class=&quot;highlighter-rouge&quot;&gt;dkms.conf&lt;/code&gt;:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; PACKAGE_NAME=&quot;lirc_serial_ir&quot;
- PACKAGE_VERSION=&quot;4.15&quot;
- CLEAN=&quot;rm -f *.*o&quot;
- BUILT_MODULE_NAME[0]=&quot;serial_ir&quot;
- DEST_MODULE_LOCATION[0]=&quot;/updates&quot;
- AUTOINSTALL=&quot;no&quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;Run &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo dkms add .&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;Run &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo dkms install lirc_serial_ir/4.15&lt;/code&gt;.&lt;/li&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Add this &lt;code&gt;dkms.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; PACKAGE_NAME=&amp;quot;lirc_serial_ir&amp;quot;
+ PACKAGE_VERSION=&amp;quot;4.15&amp;quot;
+ CLEAN=&amp;quot;rm -f *.*o&amp;quot;
+ BUILT_MODULE_NAME[0]=&amp;quot;serial_ir&amp;quot;
+ DEST_MODULE_LOCATION[0]=&amp;quot;/updates&amp;quot;
+ AUTOINSTALL=&amp;quot;no&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Run &lt;code&gt;sudo dkms add .&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Run &lt;code&gt;sudo dkms install lirc_serial_ir/4.15&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ol&gt;
-
-&lt;p&gt;Now run &lt;code class=&quot;highlighter-rouge&quot;&gt;sudo modprobe lirc_serial&lt;/code&gt;.  Run &lt;code class=&quot;highlighter-rouge&quot;&gt;dmesg&lt;/code&gt;, and you should see:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[ 1627.908509] serial_ir serial_ir.0: port 03f8 already in use
+&lt;p&gt;Now run &lt;code&gt;sudo modprobe lirc_serial&lt;/code&gt;.  Run &lt;code&gt;dmesg&lt;/code&gt;, and you should see:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;[ 1627.908509] serial_ir serial_ir.0: port 03f8 already in use
 [ 1627.908515] serial_ir serial_ir.0: use 'setserial /dev/ttySX uart none'
 [ 1627.908516] serial_ir serial_ir.0: or compile the serial port driver as module and
 [ 1627.908517] serial_ir serial_ir.0: make sure this module is loaded first
 [ 1627.908532] serial_ir: probe of serial_ir.0 failed with error -16
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;To fix this, install the “setserial” package, and &lt;a href=&quot;http://www.lirc.org/html/configuration-guide.html#serial_port_reservation&quot;&gt;disable the serial port as the instructions say&lt;/a&gt;.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;To fix this, install the &amp;quot;setserial&amp;quot; package, and &lt;a href=&quot;http://www.lirc.org/html/configuration-guide.html#serial_port_reservation&quot;&gt;disable the serial port as the instructions say&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Try running mode2, and press some buttons on the remote:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo mode2 --driver default
+&lt;pre&gt;&lt;code&gt;$ sudo mode2 --driver default
 Using driver default on device auto
 Trying device: /dev/lirc0
 Using device: /dev/lirc0
@@ -561,9 +467,7 @@ space 504574
 pulse 9015
 space 4548
 pulse 488
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-</description>
+&lt;/code&gt;&lt;/pre&gt;</description>
         <pubDate>Wed, 28 Nov 2018 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2018/11/28/lirc-ubuntu-bionic/</link>
         <guid isPermaLink="true">http://yourdomain.com/posts/2018/11/28/lirc-ubuntu-bionic/</guid>
@@ -574,27 +478,20 @@ pulse 488
       <item>
         <title>Sub 50 cent microcontrollers</title>
         <description>&lt;p&gt;&lt;a href=&quot;https://jaycarlson.net/microcontrollers/&quot;&gt;$1 microcontrollers&lt;/a&gt;, pfft.  What useful ones are around for under 50 cents?&lt;/p&gt;
-
 &lt;p&gt;The qualifications:&lt;/p&gt;
-
 &lt;ul&gt;
-  &lt;li&gt;There needs to be adequate documentation&lt;/li&gt;
-  &lt;li&gt;Programmamble with readly available (and cheap) hardware.  This rules out a lot of ones from Megawin, Sinowealth and so on; while they have reasonable user manuals, there’s no information on how to program them, short of buying a $20 programmer.&lt;/li&gt;
-  &lt;li&gt;Are readily available.  I ruled out parts only available from Taobao, for instance.&lt;/li&gt;
+&lt;li&gt;There needs to be adequate documentation&lt;/li&gt;
+&lt;li&gt;Programmamble with readly available (and cheap) hardware.  This rules out a lot of ones from Megawin, Sinowealth and so on; while they have reasonable user manuals, there's no information on how to program them, short of buying a $20 programmer.&lt;/li&gt;
+&lt;li&gt;Are readily available.  I ruled out parts only available from Taobao, for instance.&lt;/li&gt;
 &lt;/ul&gt;
-
 &lt;p&gt;I was left with these:&lt;/p&gt;
-
 &lt;ul&gt;
-  &lt;li&gt;The STM8S103.  They’re not &lt;em&gt;the&lt;/em&gt; cheapest, but are readily available in the West.  There’s a cheaper STM8S003, but its flash is rated to only 100 writes, so it sounds like the idea is to develop for the S103 first.&lt;/li&gt;
-  &lt;li&gt;The Nuvoton N76E003.  It has loads of peripherals, and is pin compatible with the STM8S103.&lt;/li&gt;
-  &lt;li&gt;The STC microcontrollers.  Not quite as much bang for buck as the Nuvoton, and unavailable in the West, but come in 8 pin packages.&lt;/li&gt;
+&lt;li&gt;The STM8S103.  They're not &lt;em&gt;the&lt;/em&gt; cheapest, but are readily available in the West.  There's a cheaper STM8S003, but its flash is rated to only 100 writes, so it sounds like the idea is to develop for the S103 first.&lt;/li&gt;
+&lt;li&gt;The Nuvoton N76E003.  It has loads of peripherals, and is pin compatible with the STM8S103.&lt;/li&gt;
+&lt;li&gt;The STC microcontrollers.  Not quite as much bang for buck as the Nuvoton, and unavailable in the West, but come in 8 pin packages.&lt;/li&gt;
 &lt;/ul&gt;
-
 &lt;p&gt;The Atmel ATtiny13 also qualifies, but I already know how to program those!&lt;/p&gt;
-
-&lt;p&gt;All should be programmable using &lt;a href=&quot;http://sdcc.sourceforge.net/&quot;&gt;SDCC&lt;/a&gt;, and either a ST-Link or USB-Serial dongle.  I’ve purchased development boards for the &lt;a href=&quot;https://www.aliexpress.com/item/STM8S103F3P6-System-Board-STM8S-STM8-Development-Board-Minimum-Core-Board/32885918852.html&quot;&gt;STM8&lt;/a&gt;, &lt;a href=&quot;https://www.aliexpress.com/item/51-Development-Board-N76E003AT20-Development-Board-System-Board-Core-Board-N76E003/32898770085.html&quot;&gt;Nuvoton&lt;/a&gt; and a &lt;a href=&quot;https://www.aliexpress.com/item/STC15W204S-SCM-Minimum-System-Board-Development-Board-51-SOP8-STC15F104E/32899351974.html&quot;&gt;STC15W204&lt;/a&gt;.  I hope to try these out and write about them.&lt;/p&gt;
-
+&lt;p&gt;All should be programmable using &lt;a href=&quot;http://sdcc.sourceforge.net/&quot;&gt;SDCC&lt;/a&gt;, and either a ST-Link or USB-Serial dongle.  I've purchased development boards for the &lt;a href=&quot;https://www.aliexpress.com/item/STM8S103F3P6-System-Board-STM8S-STM8-Development-Board-Minimum-Core-Board/32885918852.html&quot;&gt;STM8&lt;/a&gt;, &lt;a href=&quot;https://www.aliexpress.com/item/51-Development-Board-N76E003AT20-Development-Board-System-Board-Core-Board-N76E003/32898770085.html&quot;&gt;Nuvoton&lt;/a&gt; and a &lt;a href=&quot;https://www.aliexpress.com/item/STC15W204S-SCM-Minimum-System-Board-Development-Board-51-SOP8-STC15F104E/32899351974.html&quot;&gt;STC15W204&lt;/a&gt;.  I hope to try these out and write about them.&lt;/p&gt;
 </description>
         <pubDate>Wed, 24 Oct 2018 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2018/10/24/sub-50c-microcontrollers/</link>
@@ -605,20 +502,15 @@ pulse 488
     
       <item>
         <title>Schematic for the &quot;Bustodephon&quot; brushed motor electronic speed controller (ESC)</title>
-        <description>&lt;p&gt;I tried drawing the schematic for the common “Bustophedon” electronic speed controllers (ESC) for brushed motors.&lt;/p&gt;
-
-&lt;div class=&quot;content-image&quot;&gt;
-&lt;a href=&quot;/images/bustodephonschematic.png&quot;&gt;
-&lt;img src=&quot;/generated/400-bustodephonschematic.png&quot; alt=&quot;&quot; srcset=&quot;    /generated/400-bustodephonschematic.png 400w, /images/bustodephonschematic.png 1028w&quot; sizes=&quot;400px&quot; /&gt;
+        <description>&lt;p&gt;I tried drawing the schematic for the common &amp;quot;Bustophedon&amp;quot; electronic speed controllers (ESC) for brushed motors.&lt;/p&gt;
+&lt;div class='content-image'&gt;
+&lt;a href='/images/bustodephonschematic.png'&gt;
+&lt;img src=&quot;/generated/400-bustodephonschematic.png&quot; alt=&quot;&quot; srcset=&quot;    /generated/400-bustodephonschematic.png 400w, /images/bustodephonschematic.png 1028w&quot; sizes=&quot;400px&quot;&gt;
 &lt;/a&gt;
 &lt;/div&gt;
-
-&lt;p&gt;The circuit is fairly straightforward to follow.  The zener diode based regulator for the receiver power is a bit surprising - I would have thought another regulator would have been cheap enough instead of several components.  I’m guessing the separate supply is to shield the microcontroller from the receiver, especially since it would be easy to supply power from another ESC.&lt;/p&gt;
-
+&lt;p&gt;The circuit is fairly straightforward to follow.  The zener diode based regulator for the receiver power is a bit surprising - I would have thought another regulator would have been cheap enough instead of several components.  I'm guessing the separate supply is to shield the microcontroller from the receiver, especially since it would be easy to supply power from another ESC.&lt;/p&gt;
 &lt;p&gt;The microcontroller has no markings, but there &lt;a href=&quot;https://www.lcsc.com/product-detail/_PMS153_C129129.html&quot;&gt;are&lt;/a&gt; &lt;a href=&quot;https://www.lcsc.com/product-detail/_SN8P2501D-SOP-14_C80639.html&quot;&gt;several&lt;/a&gt; very cheap microcontrollers which have a suitable pinout.&lt;/p&gt;
-
-&lt;p&gt;I’ll have to analyze the microcontroller’s output to see whether it does anything special.&lt;/p&gt;
-
+&lt;p&gt;I'll have to analyze the microcontroller's output to see whether it does anything special.&lt;/p&gt;
 </description>
         <pubDate>Thu, 13 Sep 2018 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2018/09/13/brushed-bustodephon-esc-schematic/</link>
@@ -629,18 +521,12 @@ pulse 488
     
       <item>
         <title>The FlySky iBus protocol</title>
-        <description>&lt;p&gt;This is the FlySky iBus protocol that I’ve gleaned from &lt;a href=&quot;https://basejunction.wordpress.com/2015/08/23/en-flysky-i6-14-channels-part1/&quot;&gt;a blog post&lt;/a&gt; and a &lt;a href=&quot;https://github.com/aanon4/FlySkyIBus&quot;&gt;single library&lt;/a&gt;.&lt;/p&gt;
-
+        <description>&lt;p&gt;This is the FlySky iBus protocol that I've gleaned from &lt;a href=&quot;https://basejunction.wordpress.com/2015/08/23/en-flysky-i6-14-channels-part1/&quot;&gt;a blog post&lt;/a&gt; and a &lt;a href=&quot;https://github.com/aanon4/FlySkyIBus&quot;&gt;single library&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;Data is transmitted as serial UART data, 115200bps, 8N1.  A message is sent every 7 milliseconds.  &lt;a href=&quot;https://www.banggood.com/818CH-Mini-Receiver-With-PPM-iBus-SBUS-Output-for-Flysky-i6-i6x-AFHDS-2A-Transmitter-p-1183313.html&quot;&gt;My receiver&lt;/a&gt; sends this over its white wire, and stops sending a few tenths of a second after the transmitter is switched off (unlike the PPM signal on the yellow wire, which keeps sending its last value).&lt;/p&gt;
-
 &lt;p&gt;The first byte is 0x20, the second is 0x40.&lt;/p&gt;
-
 &lt;p&gt;Next are 14 pairs of bytes, which is the channel value in little endian byte order.  The FS-i6 is a 6 channel receiver, so it fills in the first 6 values.  The remainder are set to 0x05DC.  My transmitter sends values between 0x3E8 and 0x7D0.&lt;/p&gt;
-
-&lt;p&gt;Finally a 2 byte checksum is sent.  It’s in little endian byte order, it starts at 0xFFFF, from which every byte’s value is subtracted except for the checksum.&lt;/p&gt;
-
-&lt;p&gt;I’ve written &lt;a href=&quot;https://github.com/33d/ibus-library&quot;&gt;a library&lt;/a&gt; to decode this data.  An Arduino could measure the time of the message start to improve detection of the message start.  One problem using an Arduino is that the board will interfere with programming - a resistor (maybe 10k) on the data line should help.&lt;/p&gt;
-
+&lt;p&gt;Finally a 2 byte checksum is sent.  It's in little endian byte order, it starts at 0xFFFF, from which every byte's value is subtracted except for the checksum.&lt;/p&gt;
+&lt;p&gt;I've written &lt;a href=&quot;https://github.com/33d/ibus-library&quot;&gt;a library&lt;/a&gt; to decode this data.  An Arduino could measure the time of the message start to improve detection of the message start.  One problem using an Arduino is that the board will interfere with programming - a resistor (maybe 10k) on the data line should help.&lt;/p&gt;
 </description>
         <pubDate>Sun, 22 Oct 2017 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2017/10/22/flysky-ibus-protocol/</link>
@@ -651,60 +537,46 @@ pulse 488
     
       <item>
         <title>Build a Jekyll blog with Travis CI without granting write access</title>
-        <description>&lt;p&gt;With the demise of Openshift Online and its free tier, I was looking for somewhere else to host my blog.  Even though it’s a &lt;a href=&quot;https://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt; blog, it does some image resizing, so I can’t use Github’s native builder.  I should be able to use &lt;a href=&quot;https://travis-ci.org/&quot;&gt;Travis CI&lt;/a&gt; though, then push them to another Github repository for &lt;a href=&quot;https://help.github.com/categories/github-pages-basics/&quot;&gt;Pages&lt;/a&gt; hosting.&lt;/p&gt;
-
-&lt;p&gt;The &lt;a href=&quot;https://docs.travis-ci.com/user/deployment/pages/&quot;&gt;Travis instructions for Github Pages&lt;/a&gt; instructions suggest you use Github personal access tokens for authentication, but that seems to give write access to all of my Github repositories - which I don’t want to do.&lt;/p&gt;
-
+        <description>&lt;p&gt;With the demise of Openshift Online and its free tier, I was looking for somewhere else to host my blog.  Even though it's a &lt;a href=&quot;https://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt; blog, it does some image resizing, so I can't use Github's native builder.  I should be able to use &lt;a href=&quot;https://travis-ci.org/&quot;&gt;Travis CI&lt;/a&gt; though, then push them to another Github repository for &lt;a href=&quot;https://help.github.com/categories/github-pages-basics/&quot;&gt;Pages&lt;/a&gt; hosting.&lt;/p&gt;
+&lt;p&gt;The &lt;a href=&quot;https://docs.travis-ci.com/user/deployment/pages/&quot;&gt;Travis instructions for Github Pages&lt;/a&gt; instructions suggest you use Github personal access tokens for authentication, but that seems to give write access to all of my Github repositories - which I don't want to do.&lt;/p&gt;
 &lt;p&gt;You will need the &lt;a href=&quot;https://github.com/travis-ci/travis.rb&quot;&gt;command line client&lt;/a&gt; installed and logged in.&lt;/p&gt;
-
 &lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;Generate a key pair for Travis to use when pushing&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; ssh-keygen -t rsa -b 4096 -f travis-key
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-
-    &lt;p&gt;Don’t commit the generated files!&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in &lt;code class=&quot;highlighter-rouge&quot;&gt;travis-key.pub&lt;/code&gt; which you generated in the previous step, check “Enable write access”, then add the key.&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;The private key should be &lt;a href=&quot;https://docs.travis-ci.com/user/encrypting-files/&quot;&gt;encrypted&lt;/a&gt;.  From the blog repository:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; travis encrypt-file -r 33d/blog travis-key
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-
-    &lt;p&gt;where &lt;code class=&quot;highlighter-rouge&quot;&gt;travis-key&lt;/code&gt; is one of the files created earlier by &lt;code class=&quot;highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt;.&lt;/p&gt;
-
-    &lt;p&gt;This command will suggest you add a line to your &lt;code class=&quot;highlighter-rouge&quot;&gt;before_install&lt;/code&gt; section - do that.&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Put at the end of &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;’s &lt;code class=&quot;highlighter-rouge&quot;&gt;before_install&lt;/code&gt;, to stop &lt;code class=&quot;highlighter-rouge&quot;&gt;ssh-add&lt;/code&gt; complaining about the key’s permissions:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; - chmod 400 ../travis-key
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Add this to &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt;, to perform the Git push:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; after_success:
-  - eval &quot;$(ssh-agent -s)&quot;
-  - ssh-add ../travis-key
-  - git clone git@github.com:33d/blog-pages.git target
-  - cp -pr _site/* target
-  - git -C target checkout -b gh-pages
-  - git -C target add .
-  - git -C target commit -m &quot;$( date --utc --iso-8601=seconds )&quot;
-  - git -C target push --force origin gh-pages
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-
-    &lt;p&gt;I use a different repository for this, because I don’t want the build artifacts clogging the blog repository.&lt;/p&gt;
-  &lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Generate a key pair for Travis to use when pushing&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; ssh-keygen -t rsa -b 4096 -f travis-key
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Don't commit the generated files!&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in &lt;code&gt;travis-key.pub&lt;/code&gt; which you generated in the previous step, check &amp;quot;Enable write access&amp;quot;, then add the key.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The private key should be &lt;a href=&quot;https://docs.travis-ci.com/user/encrypting-files/&quot;&gt;encrypted&lt;/a&gt;.  From the blog repository:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; travis encrypt-file -r 33d/blog travis-key
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;where &lt;code&gt;travis-key&lt;/code&gt; is one of the files created earlier by &lt;code&gt;ssh-keygen&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This command will suggest you add a line to your &lt;code&gt;before_install&lt;/code&gt; section - do that.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Put at the end of &lt;code&gt;.travis.yml&lt;/code&gt;'s &lt;code&gt;before_install&lt;/code&gt;, to stop &lt;code&gt;ssh-add&lt;/code&gt; complaining about the key's permissions:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt; - chmod 400 ../travis-key
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Add this to &lt;code&gt;.travis.yml&lt;/code&gt;, to perform the Git push:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;after_success:
+ - eval &amp;quot;$(ssh-agent -s)&amp;quot;
+ - ssh-add ../travis-key
+ - git clone git@github.com:33d/blog-pages.git target
+ - cp -pr _site/* target
+ - git -C target checkout -b gh-pages
+ - git -C target add .
+ - git -C target commit -m &amp;quot;$( date --utc --iso-8601=seconds )&amp;quot;
+ - git -C target push --force origin gh-pages
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I use a different repository for this, because I don't want the build artifacts clogging the blog repository.&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ol&gt;
-
-&lt;p&gt;You can see &lt;a href=&quot;https://github.com/33d/blog/blob/blog/.travis.yml&quot;&gt;my completed &lt;code class=&quot;highlighter-rouge&quot;&gt;.travis.yml&lt;/code&gt; file&lt;/a&gt;.&lt;/p&gt;
-
+&lt;p&gt;You can see &lt;a href=&quot;https://github.com/33d/blog/blob/blog/.travis.yml&quot;&gt;my completed &lt;code&gt;.travis.yml&lt;/code&gt; file&lt;/a&gt;.&lt;/p&gt;
 </description>
         <pubDate>Sun, 08 Oct 2017 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2017/10/08/jekyll-blog-travis-ci/</link>
@@ -715,40 +587,30 @@ pulse 488
     
       <item>
         <title>Check that your flash memory isn't fake</title>
-        <description>&lt;p&gt;Here’s how I’ve checked that my flash memory (USB stick, SD card etc) isn’t fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.&lt;/p&gt;
-
+        <description>&lt;p&gt;Here's how I've checked that my flash memory (USB stick, SD card etc) isn't fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.&lt;/p&gt;
 &lt;p&gt;First, find out how big the flash is:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ cat /proc/paritions
+&lt;pre&gt;&lt;code&gt;$ cat /proc/paritions
 major minor  #blocks  name
 ...
 8       16   30736384 sdb
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Some quick maths tells me the block size is 1024 bytes.  Next, use &lt;code class=&quot;highlighter-rouge&quot;&gt;openssl&lt;/code&gt; to encrypt some zeroes, writing the output to the card:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &amp;gt; /dev/null
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Some quick maths tells me the block size is 1024 bytes.  Next, use &lt;code&gt;openssl&lt;/code&gt; to encrypt some zeroes, writing the output to the card:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &amp;gt; /dev/null
 30736384+0 records in
 30736384+0 records out
 31474057216 bytes (31 GB) copied, 989.076 s, 31.8 MB/s
 tee: /dev/sdb: No space left on device
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;I don’t know why it complains about no space, but the number of bytes written looks correct.&lt;/p&gt;
-
-&lt;p&gt;(Change some-password to some other word.)  &lt;code class=&quot;highlighter-rouge&quot;&gt;-nosalt&lt;/code&gt; prevents openssl writing a header, which contains the password salt.  Because our encryption key (the &lt;code class=&quot;highlighter-rouge&quot;&gt;some-password&lt;/code&gt; above) doesn’t need to be secure, we don’t care about it, and will stop the same stream being output next time.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I don't know why it complains about no space, but the number of bytes written looks correct.&lt;/p&gt;
+&lt;p&gt;(Change some-password to some other word.)  &lt;code&gt;-nosalt&lt;/code&gt; prevents openssl writing a header, which contains the password salt.  Because our encryption key (the &lt;code&gt;some-password&lt;/code&gt; above) doesn't need to be secure, we don't care about it, and will stop the same stream being output next time.&lt;/p&gt;
 &lt;p&gt;Now check the result:&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
+&lt;pre&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
 30736384+0 records in
 30736384+0 records out
 31474057216 bytes (31 GB) copied, 367.183 s, 85.7 MB/s
 cmp: EOF on /dev/sdb
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;If it hits the end without complaining about differences, what’s on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.&lt;/p&gt;
-
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If it hits the end without complaining about differences, what's on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.&lt;/p&gt;
 </description>
         <pubDate>Sat, 11 Jul 2015 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/</link>
@@ -759,99 +621,88 @@ cmp: EOF on /dev/sdb
     
       <item>
         <title>Save space used by an Ubuntu VM by using the live CD, the slightly easier way</title>
-        <description>&lt;p&gt;Yesterday I worked out how to use the Ubuntu live CD to save space on Ubuntu VMs.  It turns out you don’t need to change &lt;code class=&quot;highlighter-rouge&quot;&gt;initrd.lz&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Instead, all of the options in &lt;code class=&quot;highlighter-rouge&quot;&gt;casper.conf&lt;/code&gt; except &lt;code class=&quot;highlighter-rouge&quot;&gt;root_persistence&lt;/code&gt; can be specified on the kernel command line - simply add them (without the quotes) to &lt;code class=&quot;highlighter-rouge&quot;&gt;extlinux.conf&lt;/code&gt;.&lt;/p&gt;
-
+        <description>&lt;p&gt;Yesterday I worked out how to use the Ubuntu live CD to save space on Ubuntu VMs.  It turns out you don't need to change &lt;code&gt;initrd.lz&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Instead, all of the options in &lt;code&gt;casper.conf&lt;/code&gt; except &lt;code&gt;root_persistence&lt;/code&gt; can be specified on the kernel command line - simply add them (without the quotes) to &lt;code&gt;extlinux.conf&lt;/code&gt;.&lt;/p&gt;
 &lt;ol&gt;
-  &lt;li&gt;Create a virtual machine with a hard disk of your choosing.  Boot the Ubuntu live CD in it.&lt;/li&gt;
-  &lt;li&gt;Create a partition on the virtual hard disk for persistence, and make it bootable.&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Format it, give it a label:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ sudo bash
+&lt;li&gt;
+&lt;p&gt;Create a virtual machine with a hard disk of your choosing.  Boot the Ubuntu live CD in it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Create a partition on the virtual hard disk for persistence, and make it bootable.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Format it, give it a label:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;$ sudo bash
 # mkfs.ext2 /dev/sda1 -L overlay
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# mount /dev/sda1 /mnt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# mkdir /mnt/boot
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;We need to &lt;a href=&quot;https://wiki.ubuntu.com/CustomizeLiveInitrd&quot;&gt;edit &lt;code&gt;/etc/casper.conf&lt;/code&gt; inside the initrd&lt;/a&gt;:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# cd /tmp
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;    # mount /dev/sda1 /mnt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&quot;5&quot;&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;    # mkdir /mnt/boot
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&quot;6&quot;&gt;
+&lt;li&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;    # cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ol start=&quot;7&quot;&gt;
+&lt;li&gt;
+&lt;p&gt;We need to &lt;a href=&quot;https://wiki.ubuntu.com/CustomizeLiveInitrd&quot;&gt;edit &lt;code&gt;/etc/casper.conf&lt;/code&gt; inside the initrd&lt;/a&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# cd /tmp
 # mkdir i
 # cd i
 # lzcat /cdrom/casper/initrd.lz | cpio -i
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-
-    &lt;p&gt;now put in /tmp/i/etc/casper.conf (I found out the variables by looking through &lt;a href=&quot;http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper&quot;&gt;&lt;code&gt;/usr/share/initramfs-tools/scripts/casper&lt;/code&gt;&lt;/a&gt;, which is run by the kernel command line’s &lt;code class=&quot;highlighter-rouge&quot;&gt;boot&lt;/code&gt; parameter.):&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# This file should go in /etc/casper.conf
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;now put in /tmp/i/etc/casper.conf (I found out the variables by looking through &lt;a href=&quot;http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper&quot;&gt;&lt;code&gt;/usr/share/initramfs-tools/scripts/casper&lt;/code&gt;&lt;/a&gt;, which is run by the kernel command line's &lt;code&gt;boot&lt;/code&gt; parameter.):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# This file should go in /etc/casper.conf
 # Supported variables are:
 # USERNAME, USERFULLNAME, HOST, BUILD_SYSTEM, FLAVOUR
-    
-export USERNAME=&quot;user&quot;
-export USERFULLNAME=&quot;Live session user&quot;
-export HOST=&quot;vm&quot;
-export BUILD_SYSTEM=&quot;Ubuntu&quot;
-    
+
+export USERNAME=&amp;quot;user&amp;quot;
+export USERFULLNAME=&amp;quot;Live session user&amp;quot;
+export HOST=&amp;quot;vm&amp;quot;
+export BUILD_SYSTEM=&amp;quot;Ubuntu&amp;quot;
+
 # USERNAME and HOSTNAME as specified above won't be honoured and will be set to
 # flavour string acquired at boot time, unless you set FLAVOUR to any
 # non-empty string.
-    
-export FLAVOUR=&quot;Ubuntu&quot;
-    
-export PERSISTENT=&quot;Yes&quot;
-export root_persistence=&quot;overlay&quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
 
-    &lt;p&gt;You can customize your username and host name in this file too.  Note &lt;code class=&quot;highlighter-rouge&quot;&gt;root_persistence&lt;/code&gt; is the label we specified in step 3.  Now compress the initramfs:&lt;/p&gt;
+export FLAVOUR=&amp;quot;Ubuntu&amp;quot;
 
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# cd /tmp/i
+export PERSISTENT=&amp;quot;Yes&amp;quot;
+export root_persistence=&amp;quot;overlay&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You can customize your username and host name in this file too.  Note &lt;code&gt;root_persistence&lt;/code&gt; is the label we specified in step 3.  Now compress the initramfs:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# cd /tmp/i
 # find . | cpio --quiet --dereference -o -H newc | lzma -7 &amp;gt; /mnt/boot/initrd.lz
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Now for a bootloader which uses the above stuff.  Install the extlinux package.  I grabbed the .deb &lt;a href=&quot;http://packages.ubuntu.com/trusty/extlinux&quot;&gt;from the package search&lt;/a&gt;.&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Install extlinux:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# mkdir /mnt/boot/extlinux
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Now for a bootloader which uses the above stuff.  Install the extlinux package.  I grabbed the .deb &lt;a href=&quot;http://packages.ubuntu.com/trusty/extlinux&quot;&gt;from the package search&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Install extlinux:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# mkdir /mnt/boot/extlinux
 # extlinux -i /mnt/boot/extlinux
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Put this in &lt;code&gt;/mnt/boot/extlinux/extlinux.conf&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;DEFAULT linux
 
-    &lt;p&gt;Put this in &lt;code class=&quot;highlighter-rouge&quot;&gt;/mnt/boot/extlinux/extlinux.conf&lt;/code&gt;:&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;DEFAULT linux
-    
 LABEL linux
 KERNEL /boot/vmlinuz.efi
 APPEND boot=casper initrd=/boot/initrd.lz noprompt
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;The hard disk is probably missing a master boot record.&lt;/p&gt;
-
-    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
-  &lt;/li&gt;
-  &lt;li&gt;Unmount &lt;code class=&quot;highlighter-rouge&quot;&gt;/mnt&lt;/code&gt; and reboot.&lt;/li&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The hard disk is probably missing a master boot record.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Unmount &lt;code&gt;/mnt&lt;/code&gt; and reboot.&lt;/p&gt;
+&lt;/li&gt;
 &lt;/ol&gt;
-
 </description>
         <pubDate>Wed, 22 Apr 2015 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii/</link>
