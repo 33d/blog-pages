@@ -55,19 +55,19 @@
 
 <p>Another look at the memory map shows that port B goes from 0x40020400 to 0x400207FF.  That’s 1kB of address space, so maybe all of the port registers live here?  If I assume that, I need to set a few bits in GPIOA_MODER at 0x40020400, and turn on the output pin in GPIOA_ODR at 0x40020414 (the reference manual shows the offset of this register as 0x14).  Like this:</p>
 
-<pre><code>    *((int*) 0x40020400) = 0x00005000;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    *((int*) 0x40020400) = 0x00005000;
     *((int*) 0x40020414) = 0x00000080;
-</code></pre>
+</code></pre></div></div>
 
 <p>No that doesn’t work… time to cheat.  I’ll look at “blinky.c”, which is included with the Keil IDE.  It mentions a GPIO clock, maybe I need to enable that.  This idea is a bit unusual to me, since AVRs don’t have a clock for the output pins, but maybe in an ARM you need one so DMA works or something.  Figure 12 contains a rather elaborate map of how the clocks work, but the important bit is on the right: HCLK goes to the AHB bus (which I saw earlier and dismissed!)  This is fed through a prescaler from SYSCLK.  Section 5.3.8 discusses the AHB peripheral clock enable register (RCC_AHBENR) which has a “GPIOB EN” bit at bit 1.  RCC is at 0x40023800, AHBENR is at offset 1C, so this register is at 0x4002381C.</p>
 
 <p>So this gets the LED to light:</p>
 
-<pre><code>  *((uint32_t*) 0x4002381C) = 0x00000002; /* Enable GPIO clock */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  *((uint32_t*) 0x4002381C) = 0x00000002; /* Enable GPIO clock */
   *((uint32_t*) 0x40020400) = 0x00005000; /* Output mode */
   *((uint32_t*) 0x40020408) = 0x00005000; /* 2MHz clock speed */
   *((uint32_t*) 0x40020418) = 0x00000080; /* LED on */
-</code></pre>
+</code></pre></div></div>
 
 <p>That’s pretty ugly and you wouldn’t want to write too much code like that, so I’ll look at libraries that contain these numbers instead.</p>
 

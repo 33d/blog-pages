@@ -45,7 +45,7 @@
   
   <p>A quick demo of how to change 8 pins at a time with an Arduino, using some AVR C code:</p>
 
-<pre><code>void setup() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>void setup() {
   DDRD = 0xFF;
 }
 
@@ -57,7 +57,7 @@ void loop() {
   PORTD = lights;
   delay(100);
 }
-</code></pre>
+</code></pre></div></div>
 
 <p>This makes lights connected to pins 0-7 flash (I <a href="http://www.mediafire.com/?yjmzz3oqkrk">have a video</a>).  I used LEDs connected to 220Ω resistors.</p>
 
@@ -65,11 +65,11 @@ void loop() {
 
 <p>A bit about how it works:</p>
 
-<p><code>DDRD</code> is the Data Direction Register (DDR) for port D.  Bits set to 1 are outputs, and 0 are inputs.  This line sets them all to outputs.  Calling <code>pinMode()</code> on pins 0-7 manipulates this register.</p>
+<p><code class="highlighter-rouge">DDRD</code> is the Data Direction Register (DDR) for port D.  Bits set to 1 are outputs, and 0 are inputs.  This line sets them all to outputs.  Calling <code class="highlighter-rouge">pinMode()</code> on pins 0-7 manipulates this register.</p>
 
-<p>In <code>loop()</code>, <code>static</code> means this value doesn’t reset for each function call.  <code>uint8_t</code> means “unsigned 8-bit integer”.  By using this instead of an <code>int</code>, the AVR only needs one instruction to manipulate it instead of the two it needs for the 16-bit <code>int</code>.</p>
+<p>In <code class="highlighter-rouge">loop()</code>, <code class="highlighter-rouge">static</code> means this value doesn’t reset for each function call.  <code class="highlighter-rouge">uint8_t</code> means “unsigned 8-bit integer”.  By using this instead of an <code class="highlighter-rouge">int</code>, the AVR only needs one instruction to manipulate it instead of the two it needs for the 16-bit <code class="highlighter-rouge">int</code>.</p>
 
-<p>Setting <code>PORTD</code> changes the pins on port D.  Calling <code>digitalWrite()</code> with pins 0-7 changes this register, but writing to <code>PORTD</code> directly changes all of the pins at once.</p>
+<p>Setting <code class="highlighter-rouge">PORTD</code> changes the pins on port D.  Calling <code class="highlighter-rouge">digitalWrite()</code> with pins 0-7 changes this register, but writing to <code class="highlighter-rouge">PORTD</code> directly changes all of the pins at once.</p>
 
 
     <div id="comment_count"></div>

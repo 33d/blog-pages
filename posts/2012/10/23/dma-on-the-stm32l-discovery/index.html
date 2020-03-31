@@ -112,31 +112,31 @@
 </tr>
 </tbody>
 </table>
-<p><code>DMA_CNDTRx</code> contains how much data to transfer. There are 7 channels, and table 40 of the reference manual says <code>SPI2_TX</code> is on channel 5. This needs to be set to the number of pixels / 8, since I’ll have 8 pixels in one byte.  There’s a “auto-reload” setting somewhere which resets this counter value after a transfer; I think this happens in circular mode.</p>
+<p><code class="highlighter-rouge">DMA_CNDTRx</code> contains how much data to transfer. There are 7 channels, and table 40 of the reference manual says <code class="highlighter-rouge">SPI2_TX</code> is on channel 5. This needs to be set to the number of pixels / 8, since I’ll have 8 pixels in one byte.  There’s a “auto-reload” setting somewhere which resets this counter value after a transfer; I think this happens in circular mode.</p>
 
 <p>Table 40 also suggests I must use DMA1 for these transfers.</p>
 
-<p>The peripheral address register should point to the SPI data register (<code>&amp;(SPI2-&gt;DR)</code>), and the memory register is the start of the current line of pixels.</p>
+<p>The peripheral address register should point to the SPI data register (<code class="highlighter-rouge">&amp;(SPI2-&gt;DR)</code>), and the memory register is the start of the current line of pixels.</p>
 
 <p>That’s all of the available settings!  There’s one more thing to do though: section 10.3.7 says this:</p>
 
 <blockquote>The peripheral DMA requests can be independently activated/de-activated by programming the DMA control bit in the registers of the corresponding peripheral.</blockquote>
 
-<p>I guess this is the <code>TXDMAEN</code> bit in the <code>SPI_CR2</code> register.</p>
+<p>I guess this is the <code class="highlighter-rouge">TXDMAEN</code> bit in the <code class="highlighter-rouge">SPI_CR2</code> register.</p>
 
 <p>Now for some code… first I’ll make some data to send:</p>
 
-<pre><code>const uint8_t image[] = { 0xAA, 0x55, 0xAA, 0x55 };
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>const uint8_t image[] = { 0xAA, 0x55, 0xAA, 0x55 };
+</code></pre></div></div>
 
 <p>Of course later on I’ll have a lot more data…</p>
 
 <p>Now to set the above settings:</p>
 
-<pre><code>  DMA1_Channel5-&gt;CCR = DMA_CCR5_PL // very high priority
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  DMA1_Channel5-&gt;CCR = DMA_CCR5_PL // very high priority
           | DMA_CCR5_MINC  // memory increment mode
           | DMA_CCR5_DIR;  // read from memory, not peripheral
-</code></pre>
+</code></pre></div></div>
 
 <p>Section 10.3.3 has this useful bit of information:</p>
 
@@ -146,22 +146,22 @@
 
 <p>To set these:</p>
 
-<pre><code>  DMA1_Channel5-&gt;CMAR = (uint32_t) image;       // where to read from
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  DMA1_Channel5-&gt;CMAR = (uint32_t) image;       // where to read from
   DMA1_Channel5-&gt;CPAR = (uint32_t) &amp;(SPI2-&gt;DR); // where to write to
-</code></pre>
+</code></pre></div></div>
 
 <p>Time to try it out… and… nothing!  Maybe there’s another clock setting for DMA, and sure enough there is:</p>
 
-<pre><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
+</code></pre></div></div>
 
 <p>I still haven’t got anything, so I tried setting the source and destination registers each time before I start a DMA transfer. It looks like now I get a single transfer, but I’m trying to get a transfer on every hsync.</p>
 
-<p>I poked around with the debugger, especially at <code>0x40026058</code> which is <code>DMA5-&gt;CCR1</code> (I calculated the address from values in stm32l1xx.h), and noticed that the Enable flag is still set.  Maybe it has to be toggled each time?  Now I get a square wave instead of my data… I then tried decreasing my hsync timer, and decreasing the SPI speed, and I got a reasonable output.  I’m getting some nasty aliasing on my DSO Nano though, maybe I should have borrowed a faster scope!  I think I was triggering the DMA transfers too quickly, which produced that square wave.  Conveniently, I notice the SPI line is now low when it’s idle, which is the output I want.  I’m not sure why it’s gone low, but I’m not complaining.</p>
+<p>I poked around with the debugger, especially at <code class="highlighter-rouge">0x40026058</code> which is <code class="highlighter-rouge">DMA5-&gt;CCR1</code> (I calculated the address from values in stm32l1xx.h), and noticed that the Enable flag is still set.  Maybe it has to be toggled each time?  Now I get a square wave instead of my data… I then tried decreasing my hsync timer, and decreasing the SPI speed, and I got a reasonable output.  I’m getting some nasty aliasing on my DSO Nano though, maybe I should have borrowed a faster scope!  I think I was triggering the DMA transfers too quickly, which produced that square wave.  Conveniently, I notice the SPI line is now low when it’s idle, which is the output I want.  I’m not sure why it’s gone low, but I’m not complaining.</p>
 
 <p>So to sum up:</p>
 
-<pre><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  rccEnableAHB(RCC_AHBENR_DMA1EN, 0); // Enable DMA clock, run at SYSCLK
   // Configure DMA
   DMA1_Channel5-&gt;CCR = DMA_CCR5_PL // very high priority
           | DMA_CCR5_MINC  // memory increment mode
@@ -170,19 +170,19 @@
   DMA1_Channel5-&gt;CPAR = (uint32_t) &amp;(SPI2-&gt;DR); // where to write to
 ...
   SPI2-&gt;CR2 = SPI_CR2_SSOE | SPI_CR2_TXDMAEN;
-</code></pre>
+</code></pre></div></div>
 
 <p>then in my hsync handler:</p>
 
-<pre><code>    // Activate the DMA transfer
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    // Activate the DMA transfer
     DMA1_Channel5-&gt;CCR &amp;= ~DMA_CCR5_EN;
     DMA1_Channel5-&gt;CNDTR = sizeof(image);
     DMA1_Channel5-&gt;CCR |= DMA_CCR5_EN;
-</code></pre>
+</code></pre></div></div>
 
-<p>I didn’t need to reset <code>CMAR</code> and <code>CPAR</code> after all.</p>
+<p>I didn’t need to reset <code class="highlighter-rouge">CMAR</code> and <code class="highlighter-rouge">CPAR</code> after all.</p>
 
-<p>I think that’s now demonstrated everything I need for the video signal generator! My code needs a big cleanup, and I’d like to use ChibiOS functions where I can (<code>palSetPadMode</code> instead of messing around with memory locations and data structures, etc).</p>
+<p>I think that’s now demonstrated everything I need for the video signal generator! My code needs a big cleanup, and I’d like to use ChibiOS functions where I can (<code class="highlighter-rouge">palSetPadMode</code> instead of messing around with memory locations and data structures, etc).</p>
 
 
     <div id="comment_count"></div>

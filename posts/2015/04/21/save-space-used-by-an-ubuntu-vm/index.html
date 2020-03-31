@@ -51,37 +51,37 @@
   <li>
     <p>Format it, give it a label:</p>
 
-    <pre><code>$ sudo bash
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo bash
 # mkfs.ext2 /dev/sda1 -L overlay
-</code></pre>
+</code></pre></div>    </div>
   </li>
   <li>
 
-    <pre><code># mount /dev/sda1 /mnt
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mount /dev/sda1 /mnt
+</code></pre></div>    </div>
   </li>
   <li>
 
-    <pre><code># mkdir /mnt/boot
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkdir /mnt/boot
+</code></pre></div>    </div>
   </li>
   <li>
 
-    <pre><code># cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
+</code></pre></div>    </div>
   </li>
   <li>
     <p>We need to <a href="https://wiki.ubuntu.com/CustomizeLiveInitrd">edit <code>/etc/casper.conf</code> inside the initrd</a> (<em>Edit</em>: You don’t need to do this; see the end of the post):</p>
 
-    <pre><code># cd /tmp
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cd /tmp
 # mkdir i
 # cd i
 # lzcat /cdrom/casper/initrd.lz | cpio -i
-</code></pre>
+</code></pre></div>    </div>
 
-    <p>now put in /tmp/i/etc/casper.conf (I found out the variables by looking through <a href="http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper"><code>/usr/share/initramfs-tools/scripts/casper</code></a>, which is run by the kernel command line’s <code>boot</code> parameter.):</p>
+    <p>now put in /tmp/i/etc/casper.conf (I found out the variables by looking through <a href="http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper"><code>/usr/share/initramfs-tools/scripts/casper</code></a>, which is run by the kernel command line’s <code class="highlighter-rouge">boot</code> parameter.):</p>
 
-    <pre><code># This file should go in /etc/casper.conf
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># This file should go in /etc/casper.conf
 # Supported variables are:
 # USERNAME, USERFULLNAME, HOST, BUILD_SYSTEM, FLAVOUR
     
@@ -98,13 +98,13 @@ export FLAVOUR="Ubuntu"
     
 export PERSISTENT="Yes"
 export root_persistence="overlay"
-</code></pre>
+</code></pre></div>    </div>
 
-    <p>You can customize your username and host name in this file too.  Note <code>root_persistence</code> is the label we specified in step 3.  Now compress the initramfs:</p>
+    <p>You can customize your username and host name in this file too.  Note <code class="highlighter-rouge">root_persistence</code> is the label we specified in step 3.  Now compress the initramfs:</p>
 
-    <pre><code># cd /tmp/i
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># cd /tmp/i
 # find . | cpio --quiet --dereference -o -H newc | lzma -7 &gt; /mnt/boot/initrd.lz
-</code></pre>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>Now for a bootloader which uses the above stuff.  Install the extlinux package.  I grabbed the .deb <a href="http://packages.ubuntu.com/trusty/extlinux">from the package search</a>.</p>
@@ -112,38 +112,38 @@ export root_persistence="overlay"
   <li>
     <p>Install extlinux:</p>
 
-    <pre><code># mkdir /mnt/boot/extlinux
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># mkdir /mnt/boot/extlinux
 # extlinux -i /mnt/boot/extlinux
-</code></pre>
+</code></pre></div>    </div>
 
-    <p>Put this in <code>/mnt/boot/extlinux/extlinux.conf</code>:</p>
+    <p>Put this in <code class="highlighter-rouge">/mnt/boot/extlinux/extlinux.conf</code>:</p>
 
-    <pre><code>DEFAULT linux
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DEFAULT linux
     
 LABEL linux
 KERNEL /boot/vmlinuz.efi
 APPEND boot=casper initrd=/boot/initrd.lz noprompt
-</code></pre>
+</code></pre></div>    </div>
   </li>
   <li>
     <p>The hard disk is probably missing the master boot record code, so write that.</p>
 
-    <pre><code># dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
+</code></pre></div>    </div>
   </li>
-  <li>Unmount <code>/mnt</code> and reboot.</li>
+  <li>Unmount <code class="highlighter-rouge">/mnt</code> and reboot.</li>
 </ol>
 
-<p><em>Edit:</em> It turns out you don’t need to change <code>initrd.lz</code>.</p>
+<p><em>Edit:</em> It turns out you don’t need to change <code class="highlighter-rouge">initrd.lz</code>.</p>
 
-<p>Instead, all of the options in <code>casper.conf</code> except <code>root_persistence</code> can be sp
-ecified on the kernel command line - simply add them (without the quotes) to <code>ex
+<p>Instead, all of the options in <code class="highlighter-rouge">casper.conf</code> except <code class="highlighter-rouge">root_persistence</code> can be sp
+ecified on the kernel command line - simply add them (without the quotes) to <code class="highlighter-rouge">ex
 tlinux.conf</code>, like this:</p>
 
-<pre><code>APPEND boot=casper initrd=/boot/initrd.lz noprompt username=user hostname=host
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>APPEND boot=casper initrd=/boot/initrd.lz noprompt username=user hostname=host
+</code></pre></div></div>
 
-<p>You also need to label your hard disk partition <code>casper-rw</code>.</p>
+<p>You also need to label your hard disk partition <code class="highlighter-rouge">casper-rw</code>.</p>
 
 
 

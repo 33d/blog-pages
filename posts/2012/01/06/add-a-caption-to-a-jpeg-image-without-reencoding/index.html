@@ -59,21 +59,21 @@
 
 <p>I made a script that automatically adds a label using Imagemagick to create the label, and this version of jpegtran to put them together:</p>
 
-<pre><code>#!/bin/sh
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/sh</span>
 
-JPEGTRAN="/opt/jpeg-8c/bin/jpegtran"
+<span class="nv">JPEGTRAN</span><span class="o">=</span><span class="s2">"/opt/jpeg-8c/bin/jpegtran"</span>
 
-if [ $# -lt 3 ] ; then
-echo "Usage: jpeglabel [label] [in] [out]" &gt;2
-exit 2
-fi
+<span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span><span class="nt">-lt</span> 3 <span class="o">]</span> <span class="p">;</span> <span class="k">then
+</span><span class="nb">echo</span> <span class="s2">"Usage: jpeglabel [label] [in] [out]"</span> <span class="o">&gt;</span>2
+<span class="nb">exit </span>2
+<span class="k">fi
 
-LABELFILE=`mktemp`
-convert -type truecolor -size 256x16 "label:$1" jpg:"$LABELFILE"
-"$JPEGTRAN" -drop +16-16 "$LABELFILE" -outfile "$3" "$2"
+</span><span class="nv">LABELFILE</span><span class="o">=</span><span class="sb">`</span><span class="nb">mktemp</span><span class="sb">`</span>
+convert <span class="nt">-type</span> truecolor <span class="nt">-size</span> 256x16 <span class="s2">"label:</span><span class="nv">$1</span><span class="s2">"</span> jpg:<span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span>
+<span class="s2">"</span><span class="nv">$JPEGTRAN</span><span class="s2">"</span> <span class="nt">-drop</span> +16-16 <span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span> <span class="nt">-outfile</span> <span class="s2">"</span><span class="nv">$3</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$2</span><span class="s2">"</span>
 
-rm "$LABELFILE"
-</code></pre>
+<span class="nb">rm</span> <span class="s2">"</span><span class="nv">$LABELFILE</span><span class="s2">"</span>
+</code></pre></div></div>
 
 <p>I tried making some examples to show, but it turns out the (experimental) “drop” patch is very fussy about the files you give it.  I got it to work on 320x240 pictures from my camera, but not on some other images I tried.  It requires the “sampling ratio” to be the same on both images, which is found in the advanced JPEG settings in Gimp.</p>
 

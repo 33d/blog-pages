@@ -51,7 +51,7 @@
 
 <p>I looked at the result of objdump:</p>
 
-<pre><code>$ avr-objdump -h zip_linux
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ avr-objdump -h zip_linux
 
 zip_linux:     file format elf32-avr
 
@@ -69,7 +69,7 @@ Idx Name          Size      VMA       LMA       File o
                   CONTENTS, READONLY, DEBUGGING
   5 .comment      00000022  00000000  00000000  000171ad  2**0
                   CONTENTS, READONLY
-</code></pre>
+</code></pre></div></div>
 
 <p>The good news is that the code (the .text section) fits into 22k.  That leaves 10k for the screen rendering code (probably from <a href="http://www.batsocks.co.uk/products/Other/TellyMate.htm">TellyMate</a>), the keyboard and the SD card code.</p>
 
@@ -79,7 +79,7 @@ Idx Name          Size      VMA       LMA       File o
 
 <p>Let’s look at this further:</p>
 
-<pre><code>$ avr-objdump -t zip_linux | grep bss | sort -t $'\t' -k 2
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ avr-objdump -t zip_linux | grep bss | sort -t $'\t' -k 2
 ...
 
 0080030c g     O .bss    00000004 pc
@@ -89,7 +89,7 @@ Idx Name          Size      VMA       LMA       File o
 00800436 l     O .bss    00000100 record_name
 00800332 l     O .bss    00000100 save_name
 008005a0 g     O .bss    00000800 stack
-</code></pre>
+</code></pre></div></div>
 
 <p>There’s a 2048 byte stack, which fills the entire memory!  The Infocom games <a href="http://www.gnelson.demon.co.uk/zspec/sect06.html">might only need a 1k stack</a>, which will help.</p>
 

@@ -47,46 +47,46 @@
 
 <p>There was one catch though when compiling:</p>
 
-<pre><code>$ &lt;strong&gt;make&lt;/strong&gt;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;make&lt;/strong&gt;
 Compiling main.c
 Linking build/ch.elf
 build/obj/main.o: In function `VectorB8':
 /home/damien/projects/stm32/video/main.c:8: multiple definition of `VectorB8'
 build/obj/pwm_lld.o:/opt/ChibiOS_2.4.2/os/hal/platforms/STM32/pwm_lld.c:221: first defined here
-</code></pre>
+</code></pre></div></div>
 
-<p>Looking in pwm_lld.c suggests that I need to unset <code>STM32_PWM_USE_TIM4</code>.  I notice that one example has another configuration file: <code>/demos/ARMCM3-STM32L152-DISCOVERY/mcuconf.h</code>, which declares this symbol.  I copied this file to my project directory, hoping the makefile would use it in preference.  Now there were no timers available for ChibiOS, its PWM module made the compiler complain because it had no timers to use, so I had to set <code>HAL_USE_PWM</code> to <code>FALSE</code> in <code>halconf.h</code>.</p>
+<p>Looking in pwm_lld.c suggests that I need to unset <code class="highlighter-rouge">STM32_PWM_USE_TIM4</code>.  I notice that one example has another configuration file: <code class="highlighter-rouge">/demos/ARMCM3-STM32L152-DISCOVERY/mcuconf.h</code>, which declares this symbol.  I copied this file to my project directory, hoping the makefile would use it in preference.  Now there were no timers available for ChibiOS, its PWM module made the compiler complain because it had no timers to use, so I had to set <code class="highlighter-rouge">HAL_USE_PWM</code> to <code class="highlighter-rouge">FALSE</code> in <code class="highlighter-rouge">halconf.h</code>.</p>
 
 <p>The good news: my interrupt is being called! I connected the debugger and used <a href="http://sourceware.org/gdb/current/onlinedocs/gdb/Variables.html">the “p” command</a> to show the contents of “line”.  The bad news: my PB7 light isn’t blinking, which means the ChibiOS main thread isn’t working.  Maybe the interrupt is using all of the CPU?  It shouldn’t, since I thought each line took about 1000 cycles to run, and the interrupt shouldn’t be using more than about 50.</p>
 
-<p>I remember seeing somewhere that ARMs don’t reset their interrupt flags automatically, like AVRs do.  If this is the case, my interrupt will return, and the NVIC (the “nested vectored interrupt controller”, apparently) will see the flag is still set, and call the interrupt again.  The interrupt handler in ChibiOS’ <code>pal_lld.c</code> contains this line, which would clear this flag:</p>
+<p>I remember seeing somewhere that ARMs don’t reset their interrupt flags automatically, like AVRs do.  If this is the case, my interrupt will return, and the NVIC (the “nested vectored interrupt controller”, apparently) will see the flag is still set, and call the interrupt again.  The interrupt handler in ChibiOS’ <code class="highlighter-rouge">pal_lld.c</code> contains this line, which would clear this flag:</p>
 
-<pre><code>STM32_TIM1-&gt;SR = ~TIM_SR_UIF;
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>STM32_TIM1-&gt;SR = ~TIM_SR_UIF;
+</code></pre></div></div>
 
 <p>In my case, this would be:</p>
 
-<pre><code>TIM4-&gt;SR &amp;= ~TIM_SR_UIF;
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TIM4-&gt;SR &amp;= ~TIM_SR_UIF;
+</code></pre></div></div>
 
 <p>and my light blinks again, so that seems to have worked!  I checked with gdb that the “line” variable is still incrementing.</p>
 
 <p>I’ll try setting the PWM duration registers during the interrupt, so my interrupt handler looks like this:</p>
 
-<pre><code>    if (line &amp; 1) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    if (line &amp; 1) {
         TIM4-&gt;ARR = STM32_SYSCLK * 0.0001;   // horizontal line duration
         TIM4-&gt;CCR4 = STM32_SYSCLK * 0.00009; // hsync pulse duration
     } else {
         TIM4-&gt;ARR = STM32_SYSCLK * 0.000064;   // horizontal line duration
         TIM4-&gt;CCR4 = STM32_SYSCLK * 0.0000047; // hsync pulse duration
     }
-</code></pre>
+</code></pre></div></div>
 
 <p>That seems to have worked fine.  That’s about everything I need to generate the vsync signals.  I’ve done something slightly wrong though - I’d be better off using one of the compare registers to trigger the interrupt instead.  In the interrupt handler, I’d initiate a DMA transfer for the current line, then set the timing registers for the next line.</p>
 
 <p>Now my code looks like this (maybe I should start putting it on Github):</p>
 
-<pre><code>#include "ch.h"
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include "ch.h"
 #include "hal.h"
 #include "stm32l1xx.h"
 
@@ -144,7 +144,7 @@ int main(void) {
     chThdSleepMilliseconds(500);
   }
 }
-</code></pre>
+</code></pre></div></div>
 
 <p>Next I’ll try using DMA, which I’ve never used before.  With any luck I’ll be able to use ChibiOS to do this.</p>
 

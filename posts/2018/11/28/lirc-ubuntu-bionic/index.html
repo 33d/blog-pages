@@ -56,7 +56,7 @@
 
 <p>I tested it with this program, which displays a time when the DCD line changes:</p>
 
-<pre><code>#include &lt;stdio.h&gt;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include &lt;stdio.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;sys/types.h&gt;
 #include &lt;sys/stat.h&gt;
@@ -88,11 +88,11 @@ int main(void) {
   close(fd);
   return 0;
 }
-</code></pre>
+</code></pre></div></div>
 
-<p>(So why does LIRC need the kernel driver, if this works in userspace?  I suspect it’s because the LIRC API requires a timeout, which the <code>ioctl</code> doesn’t support.)</p>
+<p>(So why does LIRC need the kernel driver, if this works in userspace?  I suspect it’s because the LIRC API requires a timeout, which the <code class="highlighter-rouge">ioctl</code> doesn’t support.)</p>
 
-<p>LIRC’s serial port support works by using a kernel module to read the hardware, and sends the output to <code>/dev/lirc0</code>.  LIRC connects to this device to read the input.  The LIRC userspace driver that does this is called “default” (it used to be called “serial”).</p>
+<p>LIRC’s serial port support works by using a kernel module to read the hardware, and sends the output to <code class="highlighter-rouge">/dev/lirc0</code>.  LIRC connects to this device to read the input.  The LIRC userspace driver that does this is called “default” (it used to be called “serial”).</p>
 
 <p>It seems a few releases ago the drivers were upstreamed, and aren’t supplied with Ubuntu.  I got the driver installed with DKMS:</p>
 
@@ -102,44 +102,44 @@ int main(void) {
   <li>
     <p>Add this Makefile:</p>
 
-    <pre><code> obj-m += serial_ir.o
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> obj-m += serial_ir.o
 
  all:
  	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
  clean:
  	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-</code></pre>
+</code></pre></div>    </div>
   </li>
   <li>
-    <p>Add this <code>dkms.conf</code>:</p>
+    <p>Add this <code class="highlighter-rouge">dkms.conf</code>:</p>
 
-    <pre><code> PACKAGE_NAME="lirc_serial_ir"
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> PACKAGE_NAME="lirc_serial_ir"
  PACKAGE_VERSION="4.15"
  CLEAN="rm -f *.*o"
  BUILT_MODULE_NAME[0]="serial_ir"
  DEST_MODULE_LOCATION[0]="/updates"
  AUTOINSTALL="no"
-</code></pre>
+</code></pre></div>    </div>
   </li>
-  <li>Run <code>sudo dkms add .</code></li>
-  <li>Run <code>sudo dkms install lirc_serial_ir/4.15</code>.</li>
+  <li>Run <code class="highlighter-rouge">sudo dkms add .</code></li>
+  <li>Run <code class="highlighter-rouge">sudo dkms install lirc_serial_ir/4.15</code>.</li>
 </ol>
 
-<p>Now run <code>sudo modprobe lirc_serial</code>.  Run <code>dmesg</code>, and you should see:</p>
+<p>Now run <code class="highlighter-rouge">sudo modprobe lirc_serial</code>.  Run <code class="highlighter-rouge">dmesg</code>, and you should see:</p>
 
-<pre><code>[ 1627.908509] serial_ir serial_ir.0: port 03f8 already in use
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ 1627.908509] serial_ir serial_ir.0: port 03f8 already in use
 [ 1627.908515] serial_ir serial_ir.0: use 'setserial /dev/ttySX uart none'
 [ 1627.908516] serial_ir serial_ir.0: or compile the serial port driver as module and
 [ 1627.908517] serial_ir serial_ir.0: make sure this module is loaded first
 [ 1627.908532] serial_ir: probe of serial_ir.0 failed with error -16
-</code></pre>
+</code></pre></div></div>
 
 <p>To fix this, install the “setserial” package, and <a href="http://www.lirc.org/html/configuration-guide.html#serial_port_reservation">disable the serial port as the instructions say</a>.</p>
 
 <p>Try running mode2, and press some buttons on the remote:</p>
 
-<pre><code>$ sudo mode2 --driver default
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ sudo mode2 --driver default
 Using driver default on device auto
 Trying device: /dev/lirc0
 Using device: /dev/lirc0
@@ -148,7 +148,7 @@ space 504574
 pulse 9015
 space 4548
 pulse 488
-</code></pre>
+</code></pre></div></div>
 
 
 

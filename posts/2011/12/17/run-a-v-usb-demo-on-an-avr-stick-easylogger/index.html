@@ -53,81 +53,81 @@
 
 <p>I’ll use the USB HID class, because it doesn’t require any fancy drivers to get running.</p>
 
-<p>First, grab the <a href="http://www.obdev.at/products/vusb/download.html">V-USB code</a>, (I’m using version 20100715), and extract the <code>/examples/hid-custom-rq</code> directory somewhere.</p>
+<p>First, grab the <a href="http://www.obdev.at/products/vusb/download.html">V-USB code</a>, (I’m using version 20100715), and extract the <code class="highlighter-rouge">/examples/hid-custom-rq</code> directory somewhere.</p>
 
 <p>Let’s get the firmware working first.  The AVR stick works a bit differently to the circuit the demo is for, so we need a few changes.</p>
 
 <p>The ATmega85 only has one port: port B.  The sample uses port D.  Edit these lines in /firmware/usbconfig.h:</p>
 
-<pre><code>#define USB_CFG_IOPORTNAME      B
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define USB_CFG_IOPORTNAME      B
 #define USB_CFG_DMINUS_BIT      0
-</code></pre>
+</code></pre></div></div>
 
-<p>The LED is on PORTB1, not PORTB0, so change <code>/firmware/main.c</code>:</p>
+<p>The LED is on PORTB1, not PORTB0, so change <code class="highlighter-rouge">/firmware/main.c</code>:</p>
 
-<pre><code>#define LED_BIT             1
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define LED_BIT             1
+</code></pre></div></div>
 
 <p>Finally, we need to change the Makefile to match the ATmega85:</p>
 
-<pre><code>DEVICE  = attiny85
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DEVICE  = attiny85
 F_CPU   = 16500000
-</code></pre>
+</code></pre></div></div>
 
 <p>Where does 16500000 come from? The AVR stick uses the internal RC oscillator for its clock, which runs at about 8MHz.  The problem is, V-USB needs a clock speed of at least 12MHz to run.  ATmega5s have a fuse setting which doubles its clock speed (they call it the PLL clock or something like that).</p>
 
 <p>While the internal RC clock is fairly stable, it’s not very accurate.  When V-USB starts, it uses the USB signal to calibrate the clock so it runs at the same speed as the USB bus.  Using this calibration, it’s possible to run the internal clock at 8.25MHz, which is doubled to 16.5MHz.  This is the speed the AVR stick must run at.</p>
 
-<p>Since I was using the Bus Pirate to program the AVR stick, I had to change the <code>AVRDUDE=</code> line also.</p>
+<p>Since I was using the Bus Pirate to program the AVR stick, I had to change the <code class="highlighter-rouge">AVRDUDE=</code> line also.</p>
 
 <p>That was it for the firmware - hopefully it compiles and uploads to the AVR stick.</p>
 
-<p>Now for the software that runs on the computer.  When I compiled and ran <code>./set-led on</code>, I got this message:</p>
+<p>Now for the software that runs on the computer.  When I compiled and ran <code class="highlighter-rouge">./set-led on</code>, I got this message:</p>
 
-<pre><code>Could not find USB device "LEDCtlHID" with vid=0x16c0 pid=0x5df
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Could not find USB device "LEDCtlHID" with vid=0x16c0 pid=0x5df
+</code></pre></div></div>
 
 <p>but when I ran lsusb, I saw this line:</p>
 
-<pre><code>Bus 002 Device 023: ID 16c0:05df VOTI
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Bus 002 Device 023: ID 16c0:05df VOTI
+</code></pre></div></div>
 
-<p>“VOTI” doesn’t match “LEDCtlHID”, no wonder it couldn’t find it!  But when I ran <code>sudo lsusb -v</code>, I saw this instead:</p>
+<p>“VOTI” doesn’t match “LEDCtlHID”, no wonder it couldn’t find it!  But when I ran <code class="highlighter-rouge">sudo lsusb -v</code>, I saw this instead:</p>
 
-<pre><code>iProduct                2 LEDCtlHID
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>iProduct                2 LEDCtlHID
+</code></pre></div></div>
 
 <p>OK, so “VOTI” is simply the string form of the USB vendor ID 0x16c0, and the name “LEDCtlHID” is correct after all.  What’s going on then?</p>
 
-<p>I noticed that the usbOpenDevice function takes a few file descriptors, of which the final one is called <code>warningsFp</code>.  This is called from <code>set-led.c</code>; perhaps I’ll change this last parameter from <code>NULL</code> to <code>stderr</code>.</p>
+<p>I noticed that the usbOpenDevice function takes a few file descriptors, of which the final one is called <code class="highlighter-rouge">warningsFp</code>.  This is called from <code class="highlighter-rouge">set-led.c</code>; perhaps I’ll change this last parameter from <code class="highlighter-rouge">NULL</code> to <code class="highlighter-rouge">stderr</code>.</p>
 
-<p>When I ran <code>./set-led on</code> again, I got this:</p>
+<p>When I ran <code class="highlighter-rouge">./set-led on</code> again, I got this:</p>
 
-<pre><code>Warning: cannot query manufacturer for VID=0x16c0 PID=0x05df: error sending control message: Operation not permitted
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Warning: cannot query manufacturer for VID=0x16c0 PID=0x05df: error sending control message: Operation not permitted
+</code></pre></div></div>
 
-<p>That’s a slightly more useful error message!  So the USB library doesn’t seem to be able to use the device.  I read that some USB devices appear under <code>/dev/usb</code>, so let’s have a look with <code>ls -l /dev/usb</code>:</p>
+<p>That’s a slightly more useful error message!  So the USB library doesn’t seem to be able to use the device.  I read that some USB devices appear under <code class="highlighter-rouge">/dev/usb</code>, so let’s have a look with <code class="highlighter-rouge">ls -l /dev/usb</code>:</p>
 
-<pre><code>crw------- 1 root root 180, 96 2011-12-14 22:50 hiddev0
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>crw------- 1 root root 180, 96 2011-12-14 22:50 hiddev0
 crw------- 1 root root 180, 97 2011-12-16 21:33 hiddev1
-</code></pre>
+</code></pre></div></div>
 
-<p>Maybe that’s the problem - there’s no write permissions on the device.  To fix this, I’ll make this device writable by everyone.  Create the file <code>/etc/udev/rules.d/90-avrstick.rules</code>, and put this in it:</p>
+<p>Maybe that’s the problem - there’s no write permissions on the device.  To fix this, I’ll make this device writable by everyone.  Create the file <code class="highlighter-rouge">/etc/udev/rules.d/90-avrstick.rules</code>, and put this in it:</p>
 
-<pre><code>SUBSYSTEM=="usb", DEVTYPE="usb_device", SYSFS{idVendor}=="16c0", SYSFS{idProduct}=="05df", MODE="0666"
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SUBSYSTEM=="usb", DEVTYPE="usb_device", SYSFS{idVendor}=="16c0", SYSFS{idProduct}=="05df", MODE="0666"
+</code></pre></div></div>
 
-<p>then <code>sudo reload udev</code>.  Remove the stick then put it back in, then look at <code>/dev/usb</code> again:</p>
+<p>then <code class="highlighter-rouge">sudo reload udev</code>.  Remove the stick then put it back in, then look at <code class="highlighter-rouge">/dev/usb</code> again:</p>
 
-<pre><code>crw------- 1 root root 180, 96 2011-12-14 22:50 hiddev0
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>crw------- 1 root root 180, 96 2011-12-14 22:50 hiddev0
 crw-rw-rw- 1 root root 180, 97 2011-12-16 21:42 hiddev1
-</code></pre>
+</code></pre></div></div>
 
-<p>That’s a bit better.  Now run <code>./set-led on</code> - the white LED on the AVR stick should come on!</p>
+<p>That’s a bit better.  Now run <code class="highlighter-rouge">./set-led on</code> - the white LED on the AVR stick should come on!</p>
 
 <p>There’s one improvement I can think of - the C code is pretty ugly, so I had a go in Python.  I copied the USB calls from the C code.  The Python code follows:</p>
 
-<pre><code>import sys
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import sys
 import usb
 import itertools
 
@@ -160,9 +160,9 @@ for dev in devs:
             1, # How many bytes to read
         )
         print "LED is " + (data[0] and "on" or "off")
-</code></pre>
+</code></pre></div></div>
 
-<p>That’s much shorter than the C code, and does the same thing (admittedly there’s much less error handling here).  I used the <a href="http://pyusb.sourceforge.net/">pyusb library</a> version 0.4.2.  The documentation for this library is a bit thin, but I found the Python command “<code>help(usb)</code>” of some use, as well as the source code for the library.</p>
+<p>That’s much shorter than the C code, and does the same thing (admittedly there’s much less error handling here).  I used the <a href="http://pyusb.sourceforge.net/">pyusb library</a> version 0.4.2.  The documentation for this library is a bit thin, but I found the Python command “<code class="highlighter-rouge">help(usb)</code>” of some use, as well as the source code for the library.</p>
 
 <p>Talking to the USB device is all using Control signals, which I think you need to do because it’s pretending to be an HID device.  I found it interesting that they never send data <em>to</em> the AVR stick - they send the desired LED status in the “wValue” field, which sounds like a 16-bit field that’s in every control message.  I don’t know much about USB, but conveniently copying the C code worked fine.</p>
 

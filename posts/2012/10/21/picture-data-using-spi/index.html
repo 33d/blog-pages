@@ -53,7 +53,7 @@
 
 <p>This was enough to get SPI working:</p>
 
-<pre><code>  rccEnableAPB1(RCC_APB1ENR_SPI2EN, 0); // Enable SPI2 clock, run at SYSCLK
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  rccEnableAPB1(RCC_APB1ENR_SPI2EN, 0); // Enable SPI2 clock, run at SYSCLK
   palSetPadMode(GPIOB, 15, PAL_MODE_ALTERNATE(5) |
                            PAL_STM32_OSPEED_HIGHEST);           /* MOSI.    */
   SPI2-&gt;CR1 = //SPI_CR1_BR_0 // divide clock by 4
@@ -62,9 +62,9 @@
           | SPI_CR1_MSTR;  // master mode
   SPI2-&gt;CR2 = SPI_CR2_SSOE;
   SPI2-&gt;CR1 |= SPI_CR1_SPE; // Enable SPI
-</code></pre>
+</code></pre></div></div>
 
-<p>To send data, write bytes to <code>SPI2-&gt;DR</code>.  The output appears on PB15.  I think in the future I’ll try using <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/group___p_a_l.html#gab6377829df3700e742044a2e669c7db7"><code>palSetPadMode</code></a> for configuring the pins, since it’s better than the 8 lines of code I’ve been using previously to do this.  The above code divides the clock by 256 so I could see the output on my DSO Nano, but I’ll change this to 4 later.</p>
+<p>To send data, write bytes to <code class="highlighter-rouge">SPI2-&gt;DR</code>.  The output appears on PB15.  I think in the future I’ll try using <a href="http://chibios.sourceforge.net/docs/hal_stm32l1xx_rm/group___p_a_l.html#gab6377829df3700e742044a2e669c7db7"><code class="highlighter-rouge">palSetPadMode</code></a> for configuring the pins, since it’s better than the 8 lines of code I’ve been using previously to do this.  The above code divides the clock by 256 so I could see the output on my DSO Nano, but I’ll change this to 4 later.</p>
 
 <p>The next step will be using DMA to write the data to SPI instead.</p>
 

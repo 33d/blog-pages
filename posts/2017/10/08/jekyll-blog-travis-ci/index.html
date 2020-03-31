@@ -53,35 +53,34 @@
   <li>
     <p>Generate a key pair for Travis to use when pushing</p>
 
-    <pre><code> ssh-keygen -t rsa -b 4096 -f travis-key
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ssh-keygen -t rsa -b 4096 -f travis-key
+</code></pre></div>    </div>
 
     <p>Don’t commit the generated files!</p>
   </li>
   <li>
-    <p>Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in <code>travis-key.pub</code> which you generated in the previous step, check “Enable write access”, then add the key.</p>
+    <p>Create a repository on Github for the generated site to be pushed to.  In that repository, go to Settings, Deploy keys, then Add deploy key.  Copy in <code class="highlighter-rouge">travis-key.pub</code> which you generated in the previous step, check “Enable write access”, then add the key.</p>
   </li>
   <li>
     <p>The private key should be <a href="https://docs.travis-ci.com/user/encrypting-files/">encrypted</a>.  From the blog repository:</p>
 
-    <pre><code> travis encrypt-file -r 33d/blog travis-key
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> travis encrypt-file -r 33d/blog travis-key
+</code></pre></div>    </div>
 
-    <p>where <code>travis-key</code> is one of the files created earlier by <code>ssh-keygen</code>.</p>
+    <p>where <code class="highlighter-rouge">travis-key</code> is one of the files created earlier by <code class="highlighter-rouge">ssh-keygen</code>.</p>
 
-    <p>This command will suggest you add a line to your <code>before_install</code> section - do that.</p>
+    <p>This command will suggest you add a line to your <code class="highlighter-rouge">before_install</code> section - do that.</p>
   </li>
   <li>
-    <p>Put at the end of <code>.travis.yml</code>’s <code>before_install</code>, to stop <code>ssh-add</code> complaining about the key’s permissions:</p>
+    <p>Put at the end of <code class="highlighter-rouge">.travis.yml</code>’s <code class="highlighter-rouge">before_install</code>, to stop <code class="highlighter-rouge">ssh-add</code> complaining about the key’s permissions:</p>
 
-    <pre><code> - chmod 400 ../travis-key
-</code></pre>
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> - chmod 400 ../travis-key
+</code></pre></div>    </div>
   </li>
   <li>
-    <p>Add this to <code>.travis.yml</code>, to perform the Git push:</p>
+    <p>Add this to <code class="highlighter-rouge">.travis.yml</code>, to perform the Git push:</p>
 
-    <p><code>
- after_success:
+    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> after_success:
   - eval "$(ssh-agent -s)"
   - ssh-add ../travis-key
   - git clone git@github.com:33d/blog-pages.git target
@@ -90,13 +89,13 @@
   - git -C target add .
   - git -C target commit -m "$( date --utc --iso-8601=seconds )"
   - git -C target push --force origin gh-pages
-</code></p>
+</code></pre></div>    </div>
 
     <p>I use a different repository for this, because I don’t want the build artifacts clogging the blog repository.</p>
   </li>
 </ol>
 
-<p>You can see <a href="https://github.com/33d/blog/blob/blog/.travis.yml">my completed <code>.travis.yml</code> file</a>.</p>
+<p>You can see <a href="https://github.com/33d/blog/blob/blog/.travis.yml">my completed <code class="highlighter-rouge">.travis.yml</code> file</a>.</p>
 
 
 

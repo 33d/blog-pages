@@ -45,9 +45,9 @@
   
   <p>In <a href="http://sourcegate.wordpress.com/2012/10/01/chibios-on-the-stm32l-discovery/">my last post</a>, I suggested using <a href="http://www.chibios.org/">ChibiOS</a> to produce video signals from the <a href="http://www.st.com/internet/evalboard/product/250990.jsp">STM32L Discovery</a>.</p>
 
-<p>The configuration for ChibiOS is held in <code>chconf.h</code>.  An interesting section is this one:</p>
+<p>The configuration for ChibiOS is held in <code class="highlighter-rouge">chconf.h</code>.  An interesting section is this one:</p>
 
-<pre><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * @brief   System tick frequency.
  * @details Frequency of the system timer that drives the system ticks. This
  *          setting also defines the system tick time unit.
@@ -55,18 +55,18 @@
 #if !defined(CH_FREQUENCY) || defined(__DOXYGEN__)
 #define CH_FREQUENCY                    1000
 #endif
-</code></pre>
+</code></pre></div></div>
 
 <p>It looks like the operating system wakes up periodically, checking whether there’s anything to do.  It also means that to produce video signals, this number may not be accurate enough.</p>
 
-<p>So what is this number used for?  The only interesting reference I can find is in <code>os/hal/platforms/STM32L1xx/hal_lld.c</code>:</p>
+<p>So what is this number used for?  The only interesting reference I can find is in <code class="highlighter-rouge">os/hal/platforms/STM32L1xx/hal_lld.c</code>:</p>
 
-<pre><code>SysTick-&gt;LOAD = STM32_HCLK / CH_FREQUENCY - 1;
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SysTick-&gt;LOAD = STM32_HCLK / CH_FREQUENCY - 1;
+</code></pre></div></div>
 
-<p>and of course that’s where the system ticks are initialized.  <code>STM32_HCLK</code> looks interesting, there’s plenty of references to this in <code>os/hal/platforms/STM32F4xx/hal_lld.h</code>:</p>
+<p>and of course that’s where the system ticks are initialized.  <code class="highlighter-rouge">STM32_HCLK</code> looks interesting, there’s plenty of references to this in <code class="highlighter-rouge">os/hal/platforms/STM32F4xx/hal_lld.h</code>:</p>
 
-<pre><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
 * @brief   AHB frequency.
 */
 #if (STM32_HPRE == STM32_HPRE_DIV1) || defined(__DOXYGEN__)
@@ -74,11 +74,11 @@
 #elif STM32_HPRE == STM32_HPRE_DIV2
 #define STM32_HCLK                  (STM32_SYSCLK / 2)
 ...
-</code></pre>
+</code></pre></div></div>
 
 <p>I remember <a href="http://sourcegate.wordpress.com/2012/09/24/blinky-on-the-stm32l-discovery/">seeing the text AHB before</a>, this is the bus that connects the CPU to the GPIO ports, and other peripherals.  This code suggests that it’s related to the CPU clock via a prescaler, which the clock tree in the <a href="http://www.st.com/internet/com/TECHNICAL_RESOURCES/TECHNICAL_LITERATURE/REFERENCE_MANUAL/CD00240193.pdf">reference manual</a> confirms.  This led me here:</p>
 
-<pre><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
 * @brief   System clock source.
 */
 #if STM32_NO_INIT || defined(__DOXYGEN__)
@@ -86,7 +86,7 @@
 #elif (STM32_SW == STM32_SW_HSI)
 #define STM32_SYSCLK                STM32_HSICLK
 ...
-</code></pre>
+</code></pre></div></div>
 
 <p>so STM32_SYSCLK is the system clock, and we can choose the source for this.  “HSI” would be the High Speed Internal clock, which is fixed at 16MHz.  It’s possible to use the PLL to run the CPU at 32MHz too.</p>
 
@@ -96,9 +96,9 @@
 
 <p>So what is the SysTick for?  Section 5.2 suggests that an interrupt can be triggered on the SysTick firing, which might be what ChibiOS uses for its scheduling.  (Wordpress didn’t save my draft from here, so I might be missing a few steps.)  So where is the handler for this?</p>
 
-<p>Earler <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">I found that each program starts with an interrupt table</a>.  The example there has 4 entries, but it can be longer.  The linker script (<code>os/ports/GCC/ARMCMx/STM32L1xx/ld/STM32L152xB.ld</code>) contains a section called “vectors”, which is defined in <code>os/ports/GCC/ARMCMx/STM32L1xx/vectors.c</code>.  The SysTick handler is called SysTickVector, which looks like this (from <code>os/ports/GCC/ARMCMx/chcore_v7m.c</code>; I don’t know whether this is an arm6 or an arm7):</p>
+<p>Earler <a href="http://sourcegate.wordpress.com/2012/09/18/getting-started-with-an-stm32l-discovery-with-linux-and-gcc/">I found that each program starts with an interrupt table</a>.  The example there has 4 entries, but it can be longer.  The linker script (<code class="highlighter-rouge">os/ports/GCC/ARMCMx/STM32L1xx/ld/STM32L152xB.ld</code>) contains a section called “vectors”, which is defined in <code class="highlighter-rouge">os/ports/GCC/ARMCMx/STM32L1xx/vectors.c</code>.  The SysTick handler is called SysTickVector, which looks like this (from <code class="highlighter-rouge">os/ports/GCC/ARMCMx/chcore_v7m.c</code>; I don’t know whether this is an arm6 or an arm7):</p>
 
-<pre><code>CH_IRQ_HANDLER(SysTickVector) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CH_IRQ_HANDLER(SysTickVector) {
 
   CH_IRQ_PROLOGUE();
 
@@ -108,7 +108,7 @@
 
   CH_IRQ_EPILOGUE();
 }
-</code></pre>
+</code></pre></div></div>
 
 <p>So this is how the SysTick facility works.  Now this can’t be used for generating the video signals, since it’s not accurate enough - I’d need to use another timer for that.  The timer interrupt would need to be of higher priority than SysTick, otherwise the CPU might be doing something else which would make the image jump around.  The ChibiOS docs suggest that interrupt handlers are <a href="http://www.chibios.org/dokuwiki/doku.php?id=chibios:kb:priority#what_about_interrupts">like a special thread with higher priority than everything else</a>, which is what I want.</p>
 

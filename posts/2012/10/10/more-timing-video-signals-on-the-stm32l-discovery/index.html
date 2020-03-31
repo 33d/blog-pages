@@ -55,7 +55,7 @@
 
 <p>The signal end is a bit trickier.  The image shows that it varies depending on the line; further, on some of the vertical sync lines it happens twice!  This means that we might need to change the value at which the signal goes high <em>as the timer is running</em>.  The AVR can do this, but in some modes the timer register is double-buffered.  If you write a new value to the timer compare register, it’s only applied the next time the timer resets.  They do this so you don’t set a compare value <em>lower</em> than the current register, which means the timer will keep counting up until it overflows!</p>
 
-<p>So can you adjust the compare registers on the fly on the STM32L, and is it double buffered?  It looks like the compare register is called <code>TIMx_CCR1</code>.  There doesn’t seem to be a CCR2, so maybe these timers only have one output.  In the reference manual, section 17.6.11 says:</p>
+<p>So can you adjust the compare registers on the fly on the STM32L, and is it double buffered?  It looks like the compare register is called <code class="highlighter-rouge">TIMx_CCR1</code>.  There doesn’t seem to be a CCR2, so maybe these timers only have one output.  In the reference manual, section 17.6.11 says:</p>
 
 <blockquote>It is loaded permanently if the preload feature is not selected in the TIMx_CCMR1 register (bit OC1PE). Else the preload value is copied in the active capture/compare 1 register when an update event occurs.</blockquote>
 

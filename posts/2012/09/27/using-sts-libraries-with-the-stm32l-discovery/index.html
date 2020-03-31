@@ -47,35 +47,35 @@
 
 <p>Their license isn’t the nicest, but it should be fine for any development for this board.  It essentially says that it can only be used for software designed for this chip.  This seems pretty stupid to me, what else is it going to be used for?  Maybe ST’s law department is like the guy who changes speed limits on roads; making random changes to keep their jobs. (Rant ends here.)</p>
 
-<p>Unzip this somewhere.  The more interesting stuff looks like it’s in the directory <code>STM32L1xx_StdPeriph_Lib_V1.1.1/Libraries/STM32L1xx_StdPeriph_Driver/src/</code>. Let’s build something in here:</p>
+<p>Unzip this somewhere.  The more interesting stuff looks like it’s in the directory <code class="highlighter-rouge">STM32L1xx_StdPeriph_Lib_V1.1.1/Libraries/STM32L1xx_StdPeriph_Driver/src/</code>. Let’s build something in here:</p>
 
-<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c stm32l1xx_gpio.c&lt;/strong&gt;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c stm32l1xx_gpio.c&lt;/strong&gt;
 stm32l1xx_gpio.c:76:28: fatal error: stm32l1xx_gpio.h: No such file or directory
 compilation terminated.
-</code></pre>
+</code></pre></div></div>
 
 <p>Let’s tell the compiler where the headers are:</p>
 
-<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc stm32l1xx_gpio.c&lt;/strong&gt; 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc stm32l1xx_gpio.c&lt;/strong&gt; 
 In file included from stm32l1xx_gpio.c:76:0:
 ../inc/stm32l1xx_gpio.h:38:23: fatal error: stm32l1xx.h: No such file or directory
 compilation terminated.
-</code></pre>
+</code></pre></div></div>
 
 <p>Still no good…</p>
 
-<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ stm32l1xx_gpio.c&lt;/strong&gt;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ stm32l1xx_gpio.c&lt;/strong&gt;
 In file included from ../inc/stm32l1xx_gpio.h:38:0,
                  from stm32l1xx_gpio.c:76:
 ../../CMSIS/Device/ST/STM32L1xx/Include/stm32l1xx.h:266:22: fatal error: core_cm3.h: No such file or directory
 compilation terminated.
-</code></pre>
+</code></pre></div></div>
 
 <p>and another one:</p>
 
-<pre><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ -I../../CMSIS/Include stm32l1xx_gpio.c
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ &lt;strong&gt;arm-none-eabi-gcc -fno-common -O0 -g -mcpu=cortex-m0 -mthumb -c -I../inc -I../../CMSIS/Device/ST/STM32L1xx/Include/ -I../../CMSIS/Include stm32l1xx_gpio.c
 &lt;/strong&gt;
-</code></pre>
+</code></pre></div></div>
 
 <p>At last!</p>
 
@@ -83,23 +83,23 @@ compilation terminated.
 
 <p>Previously I used this ghastly code to turn on the LED:</p>
 
-<pre><code>  *((uint32_t*) 0x4002381C) = 0x00000002; /* Enable GPIO clock */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  *((uint32_t*) 0x4002381C) = 0x00000002; /* Enable GPIO clock */
   *((uint32_t*) 0x40020400) = 0x00005000; /* Output mode */
   *((uint32_t*) 0x40020408) = 0x00005000; /* 2MHz clock speed */
   *((uint32_t*) 0x40020418) = 0x00000080; /* LED on */
-</code></pre>
+</code></pre></div></div>
 
 <p>Using the ST code, this now looks like:</p>
 
-<pre><code>    RCC-&gt;AHBENR |=  (1UL &lt;&lt;  1);        /* Enable GPIOB clock         */     GPIOB-&gt;MODER   |=   (0x00005000);   /* General purpose output mode*/
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    RCC-&gt;AHBENR |=  (1UL &lt;&lt;  1);        /* Enable GPIOB clock         */     GPIOB-&gt;MODER   |=   (0x00005000);   /* General purpose output mode*/
     GPIOB-&gt;OSPEEDR |=   (0x00005000);   /* 2 MHz Low speed            */
     GPIOB-&gt;BSRRL = 1L &lt;&lt; 7;             /* LED on */
-</code></pre>
+</code></pre></div></div>
 
 <p>This include needs to be added at the top:</p>
 
-<pre><code>#include &lt;stm32l1xx.h&gt;
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include &lt;stm32l1xx.h&gt;
+</code></pre></div></div>
 
 <p>This needs to be compiled with the headers from the SPL, and linked with the compiled SPL.</p>
 

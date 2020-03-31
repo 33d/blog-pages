@@ -49,69 +49,69 @@
   <li>Produce a list of your current package selections:</li>
 </ol>
 
-<pre><code>dpkg --get-selections | awk '{ print $1 }' &gt; selections
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dpkg --get-selections | awk '{ print $1 }' &gt; selections
+</code></pre></div></div>
 
 <ol>
   <li>Get the package lists:</li>
 </ol>
 
-<pre><code>for s in lucid/main lucid/multiverse lucid/restricted lucid/universe \
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>for s in lucid/main lucid/multiverse lucid/restricted lucid/universe \
         lucid-updates/main lucid-updates/multiverse \
         lucid-updates/restricted lucid-updates/universe ; do \
     wget -c "http://archive.ubuntu.com/ubuntu/dists/$s/binary-i386/Packages.bz2" \
         -O Packages_${s/\//_}.bz2 ; \
 done
-</code></pre>
+</code></pre></div></div>
 
 <p>This grabs the package lists in filenames like this:</p>
 
-<pre><code>Packages_lucid-updates_restricted.bz2
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Packages_lucid-updates_restricted.bz2
+</code></pre></div></div>
 
 <ol>
   <li>Extract the filenames from these package lists:</li>
 </ol>
 
-<pre><code>for f in Packages*.bz2 ; do bzcat $f | awk '
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>for f in Packages*.bz2 ; do bzcat $f | awk '
 /^Package/ { package=$2 } 
 /^Filename/ { print package "\t" $2 } 
 ' &gt; ${f%%.bz2}.filenames ; done
-</code></pre>
+</code></pre></div></div>
 
 <ol>
   <li>Produce a list of all filenames, making sure the updates get precedence over the other ones:</li>
 </ol>
 
-<pre><code>cat `ls -1 Package*.filenames | sort` | awk '
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat `ls -1 Package*.filenames | sort` | awk '
 { files[$1] = $2 }
 END {
   for (p in files) print p "\t" files[p]
 }' | sort &gt; all.filenames
-</code></pre>
+</code></pre></div></div>
 
 <ol>
   <li>Produce a script of your selections:</li>
 </ol>
 
-<pre><code>awk '
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>awk '
 BEGIN { while (getline &lt; "all.filenames" != 0) filenames[$1] = $2 }
 { if ($1 in filenames) print "wget -c http://archive.ubuntu.com/ubuntu/" filenames[$1] }
 '  &lt; selections &gt; downloads
-</code></pre>
+</code></pre></div></div>
 
 <ol>
-  <li>Take the file <code>downloads</code> to another computer, and run it:</li>
+  <li>Take the file <code class="highlighter-rouge">downloads</code> to another computer, and run it:</li>
 </ol>
 
-<pre><code>sh downloads
-</code></pre>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sh downloads
+</code></pre></div></div>
 
 <ol>
-  <li>Take the downloaded files back to the offline computer, copy the files to <code>/var/cache/apt/archives</code>, then <code>do-release-upgrade</code>.</li>
+  <li>Take the downloaded files back to the offline computer, copy the files to <code class="highlighter-rouge">/var/cache/apt/archives</code>, then <code class="highlighter-rouge">do-release-upgrade</code>.</li>
 </ol>
 
-<p>You could probably save more quota by renaming the Package files and copying them to <code>/var/lib/apt/lists</code>.</p>
+<p>You could probably save more quota by renaming the Package files and copying them to <code class="highlighter-rouge">/var/lib/apt/lists</code>.</p>
 
 
     <div id="comment_count"></div>
