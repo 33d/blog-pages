@@ -5,9 +5,203 @@
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</description>
     <link>http://yourdomain.com/</link>
     <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Sun, 11 Dec 2022 00:54:48 +0000</pubDate>
-    <lastBuildDate>Sun, 11 Dec 2022 00:54:48 +0000</lastBuildDate>
+    <pubDate>Sun, 11 Dec 2022 00:58:41 +0000</pubDate>
+    <lastBuildDate>Sun, 11 Dec 2022 00:58:41 +0000</lastBuildDate>
     <generator>Jekyll v4.3.1</generator>
+    
+      <item>
+        <title>2022 Advent of Code</title>
+        <description>&lt;p&gt;I'm having a go at the &lt;a href=&quot;https://adventofcode.com/2022/&quot;&gt;2022 Advent of Code&lt;/a&gt;. Here's how I solved the problems - the ones I could be bothered solving anyway.&lt;/p&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/1&quot;&gt;01&lt;/a&gt; =&lt;/p&gt;
+&lt;p&gt;Use this awk script to convert the data to a CSV, one row per elf:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;/[0-9]/ { printf &amp;quot;%d,&amp;quot;, $0 }
+/^$/ { print &amp;quot;&amp;quot; }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Load the result into a spreadsheet application, sum the rows, and sort the totals to get the answers.&lt;/p&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/2&quot;&gt;02&lt;/a&gt; =&lt;/p&gt;
+&lt;p&gt;The score depends only on the second character (X, Y or Z), and whether you win, lose or draw.  I went for Python this time.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import functools
+
+player_score = { 'X': 1, 'Y': 2, 'Z': 3 }
+win_scores = {
+  'X': { 'A': 3, 'B': 0, 'C': 6 },
+  'Y': { 'A': 6, 'B': 3, 'C': 0 },
+  'Z': { 'A': 0, 'B': 6, 'C': 3 },  
+}
+
+print (functools.reduce(
+  lambda score, line: score + player_score[line[2]] + win_scores[line[2]][line[0]],
+  (l for l in sys.stdin if len(l) &amp;gt;= 3),
+  0
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Part two is a little simpler, you can precalculate each result:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import functools
+
+scores = {
+  'A': { 'X': 0 + 3, 'Y': 3 + 1, 'Z': 6 + 2 },
+  'B': { 'X': 0 + 1, 'Y': 3 + 2, 'Z': 6 + 3 },
+  'C': { 'X': 0 + 2, 'Y': 3 + 3, 'Z': 6 + 1 },
+}
+
+print (functools.reduce(
+  lambda score, line: score + scores[line[0]][line[2]],
+  (l for l in sys.stdin if len(l) &amp;gt;= 3),
+  0
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/3&quot;&gt;03&lt;/a&gt; =&lt;/p&gt;
+&lt;p&gt;Get the first half of the string, look for the first character in the second half in the first half&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import functools
+
+# the score of each item; a = 1
+scores = list(' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+def score(line):
+    half = len(line) // 2
+    first_half = line[0:half]
+    try:
+        common = next(l for l in line[half:] if l in first_half)
+        return scores.index(common)
+    except StopIteration:
+        # no item in common
+        return 0
+
+print(functools.reduce(
+    lambda s, line: s + score(line.strip()),
+    sys.stdin,
+    0
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Part 2:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import functools
+import itertools
+
+# the score of each item; a = 1
+scores = list(' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+def score(lines):
+    rest = lines[1:]
+    common = next(c for c in lines[0] if all(c in l for l in rest))
+    return scores.index(common)
+
+print(functools.reduce(
+    lambda s, lines: s + score([l.strip() for l in lines]),
+    # take groups of 3 until the result is empty
+    iter(lambda: list(itertools.islice(sys.stdin, 3)), []),
+    0
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/4&quot;&gt;04&lt;/a&gt; =&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import re
+
+line_re = re.compile(r'(\d+)-(\d+),(\d+)-(\d+)')
+
+def within(line):
+    n = [int(n) for n in line_re.match(line).group(1, 2, 3, 4)]
+    return n[0] &amp;gt;= n[2] and n[1] &amp;lt;= n[3] or \
+           n[2] &amp;gt;= n[0] and n[3] &amp;lt;= n[1]
+
+print(sum(
+    within(line) and 1 or 0 for line in sys.stdin
+))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Part 2 is the same, with the return value:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;    return n[0] &amp;lt;= n[3] and n[1] &amp;gt;= n[2] or \
+           n[1] &amp;lt;= n[2] and n[0] &amp;gt;= n[3]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/5&quot;&gt;05&lt;/a&gt; =&lt;/p&gt;
+&lt;p&gt;The stacks are represented by lists. The initial state is loaded into the start of each list, then manipulated at the end of the lists.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+import re
+
+move_re = re.compile('move (\d*) from (\d*) to (\d*)')
+
+stack_count = 9
+stacks = [[] for n in range(stack_count)]
+
+for line in sys.stdin:
+    if len(line) &amp;lt; 36:
+        break
+    for n in range(stack_count):
+        char = line[n * 4 + 1]
+        if char != ' ':
+            stacks[n].insert(0, char)
+
+for line in sys.stdin:
+    match = move_re.match(line)
+    if not match:
+        continue
+    number, src, to = (int(n) for n in move_re.match(line).group(1, 2, 3))
+    transferred = stacks[src-1][-number:]
+    transferred.reverse()
+    del stacks[src-1][-number:]
+    stacks[to-1].extend(transferred)
+
+print(&amp;quot;&amp;quot;.join(s[-1] for s in stacks))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For part two, remove the &lt;code&gt;reverse&lt;/code&gt; line (which I did first, because I didn't read the instructions properly!)&lt;/p&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/6&quot;&gt;06&lt;/a&gt; =&lt;/p&gt;
+&lt;p&gt;Almost a one liner:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+
+data = sys.stdin.read()
+count = 4
+print(next(n for n in range(count, len(data)) if len(set(data[n-count:n])) == count))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Change count to 14 for the second step.&lt;/p&gt;
+&lt;p&gt;= &lt;a href=&quot;https://adventofcode.com/2022/day/7&quot;&gt;07&lt;/a&gt; =&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+
+root = {}
+dir = root
+
+for line in sys.stdin:
+    if line.startswith(&amp;quot;$ cd &amp;quot;):
+        name = line[5:-1] # chop off the newline
+        if name == '/':
+            dir = root
+        else:
+            dir = dir[name]
+    elif not line.startswith(&amp;quot;$&amp;quot;):
+        size, name = line.split(maxsplit=1)
+        name = name[:-1] # chop off the newline
+        if size == &amp;quot;dir&amp;quot;:
+            dir.setdefault(name, {&amp;quot;..&amp;quot;: dir})
+        else:
+            dir[name] = int(size)
+
+def sizes(dir, all=[]):
+    total = 0
+    for name, val in dir.items():
+        if name == '..':
+            continue
+        if type(val) == dict:
+            total += sizes(val, all)[-1]
+        else:
+            total += val
+    all.append(total)
+    return all
+
+print(sum(s for s in sizes(root) if s &amp;lt;= 100000))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For part 2, change the final &lt;code&gt;print&lt;/code&gt; to&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;allsizes = sizes(root)
+used = allsizes[-1]
+required = 30000000 - (70000000 - used)
+print(min(s for s in sizes(root) if s &amp;gt;= required))
+&lt;/code&gt;&lt;/pre&gt;</description>
+        <pubDate>Sat, 31 Dec 2022 00:00:00 +0000</pubDate>
+        <link>http://yourdomain.com/posts/2022/12/31/2022-advent-of-code/</link>
+        <guid isPermaLink="true">http://yourdomain.com/posts/2022/12/31/2022-advent-of-code/</guid>
+        
+        
+      </item>
     
       <item>
         <title>Cyber FastTrack 2020 Forensics RH01 challenge</title>
@@ -615,98 +809,6 @@ cmp: EOF on /dev/sdb
         <pubDate>Sat, 11 Jul 2015 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/</link>
         <guid isPermaLink="true">http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Save space used by an Ubuntu VM by using the live CD, the slightly easier way</title>
-        <description>&lt;p&gt;Yesterday I worked out how to use the Ubuntu live CD to save space on Ubuntu VMs.  It turns out you don't need to change &lt;code&gt;initrd.lz&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Instead, all of the options in &lt;code&gt;casper.conf&lt;/code&gt; except &lt;code&gt;root_persistence&lt;/code&gt; can be specified on the kernel command line - simply add them (without the quotes) to &lt;code&gt;extlinux.conf&lt;/code&gt;.&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;
-&lt;p&gt;Create a virtual machine with a hard disk of your choosing.  Boot the Ubuntu live CD in it.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Create a partition on the virtual hard disk for persistence, and make it bootable.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Format it, give it a label:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ sudo bash
-# mkfs.ext2 /dev/sda1 -L overlay
-&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
-&lt;li&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;    # mount /dev/sda1 /mnt
-&lt;/code&gt;&lt;/pre&gt;
-&lt;ol start=&quot;5&quot;&gt;
-&lt;li&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;    # mkdir /mnt/boot
-&lt;/code&gt;&lt;/pre&gt;
-&lt;ol start=&quot;6&quot;&gt;
-&lt;li&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;pre&gt;&lt;code&gt;    # cp -p /cdrom/casper/vmlinuz.efi /mnt/boot
-&lt;/code&gt;&lt;/pre&gt;
-&lt;ol start=&quot;7&quot;&gt;
-&lt;li&gt;
-&lt;p&gt;We need to &lt;a href=&quot;https://wiki.ubuntu.com/CustomizeLiveInitrd&quot;&gt;edit &lt;code&gt;/etc/casper.conf&lt;/code&gt; inside the initrd&lt;/a&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# cd /tmp
-# mkdir i
-# cd i
-# lzcat /cdrom/casper/initrd.lz | cpio -i
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;now put in /tmp/i/etc/casper.conf (I found out the variables by looking through &lt;a href=&quot;http://bazaar.launchpad.net/~ubuntu-branches/ubuntu/trusty/casper/trusty/view/head:/scripts/casper&quot;&gt;&lt;code&gt;/usr/share/initramfs-tools/scripts/casper&lt;/code&gt;&lt;/a&gt;, which is run by the kernel command line's &lt;code&gt;boot&lt;/code&gt; parameter.):&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# This file should go in /etc/casper.conf
-# Supported variables are:
-# USERNAME, USERFULLNAME, HOST, BUILD_SYSTEM, FLAVOUR
-
-export USERNAME=&amp;quot;user&amp;quot;
-export USERFULLNAME=&amp;quot;Live session user&amp;quot;
-export HOST=&amp;quot;vm&amp;quot;
-export BUILD_SYSTEM=&amp;quot;Ubuntu&amp;quot;
-
-# USERNAME and HOSTNAME as specified above won't be honoured and will be set to
-# flavour string acquired at boot time, unless you set FLAVOUR to any
-# non-empty string.
-
-export FLAVOUR=&amp;quot;Ubuntu&amp;quot;
-
-export PERSISTENT=&amp;quot;Yes&amp;quot;
-export root_persistence=&amp;quot;overlay&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;You can customize your username and host name in this file too.  Note &lt;code&gt;root_persistence&lt;/code&gt; is the label we specified in step 3.  Now compress the initramfs:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# cd /tmp/i
-# find . | cpio --quiet --dereference -o -H newc | lzma -7 &amp;gt; /mnt/boot/initrd.lz
-&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Now for a bootloader which uses the above stuff.  Install the extlinux package.  I grabbed the .deb &lt;a href=&quot;http://packages.ubuntu.com/trusty/extlinux&quot;&gt;from the package search&lt;/a&gt;.&lt;/p&gt;
-&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Install extlinux:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# mkdir /mnt/boot/extlinux
-# extlinux -i /mnt/boot/extlinux
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Put this in &lt;code&gt;/mnt/boot/extlinux/extlinux.conf&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;DEFAULT linux
-
-LABEL linux
-KERNEL /boot/vmlinuz.efi
-APPEND boot=casper initrd=/boot/initrd.lz noprompt
-&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;The hard disk is probably missing a master boot record.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;# dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda
-&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
-&lt;li&gt;
-&lt;p&gt;Unmount &lt;code&gt;/mnt&lt;/code&gt; and reboot.&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Wed, 22 Apr 2015 00:00:00 +0000</pubDate>
-        <link>http://yourdomain.com/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii/</link>
-        <guid isPermaLink="true">http://yourdomain.com/posts/2015/04/22/save-space-used-by-an-ubuntu-vm-mk-ii/</guid>
         
         
       </item>

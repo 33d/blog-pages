@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>2022 Advent of Code</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2022/12/31/2022-advent-of-code/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2020/03/28/cyber-fasttrack-spring-2020-rh01/">Cyber FastTrack 2020 Forensics RH01 challenge</a></p>
+    <p class="post-nav-newer">&nbsp;</p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>2022 Advent of Code</h1>
+    <p class="meta">2022-12-31</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I'm having a go at the <a href="https://adventofcode.com/2022/">2022 Advent of Code</a>. Here's how I solved the problems - the ones I could be bothered solving anyway.</p>
+<p>= <a href="https://adventofcode.com/2022/day/1">01</a> =</p>
+<p>Use this awk script to convert the data to a CSV, one row per elf:</p>
+<pre><code>/[0-9]/ { printf &quot;%d,&quot;, $0 }
+/^$/ { print &quot;&quot; }
+</code></pre>
+<p>Load the result into a spreadsheet application, sum the rows, and sort the totals to get the answers.</p>
+<p>= <a href="https://adventofcode.com/2022/day/2">02</a> =</p>
+<p>The score depends only on the second character (X, Y or Z), and whether you win, lose or draw.  I went for Python this time.</p>
+<pre><code>import sys
+import functools
+
+player_score = { 'X': 1, 'Y': 2, 'Z': 3 }
+win_scores = {
+  'X': { 'A': 3, 'B': 0, 'C': 6 },
+  'Y': { 'A': 6, 'B': 3, 'C': 0 },
+  'Z': { 'A': 0, 'B': 6, 'C': 3 },  
+}
+
+print (functools.reduce(
+  lambda score, line: score + player_score[line[2]] + win_scores[line[2]][line[0]],
+  (l for l in sys.stdin if len(l) &gt;= 3),
+  0
+))
+</code></pre>
+<p>Part two is a little simpler, you can precalculate each result:</p>
+<pre><code>import sys
+import functools
+
+scores = {
+  'A': { 'X': 0 + 3, 'Y': 3 + 1, 'Z': 6 + 2 },
+  'B': { 'X': 0 + 1, 'Y': 3 + 2, 'Z': 6 + 3 },
+  'C': { 'X': 0 + 2, 'Y': 3 + 3, 'Z': 6 + 1 },
+}
+
+print (functools.reduce(
+  lambda score, line: score + scores[line[0]][line[2]],
+  (l for l in sys.stdin if len(l) &gt;= 3),
+  0
+))
+</code></pre>
+<p>= <a href="https://adventofcode.com/2022/day/3">03</a> =</p>
+<p>Get the first half of the string, look for the first character in the second half in the first half</p>
+<pre><code>import sys
+import functools
+
+# the score of each item; a = 1
+scores = list(' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+def score(line):
+    half = len(line) // 2
+    first_half = line[0:half]
+    try:
+        common = next(l for l in line[half:] if l in first_half)
+        return scores.index(common)
+    except StopIteration:
+        # no item in common
+        return 0
+
+print(functools.reduce(
+    lambda s, line: s + score(line.strip()),
+    sys.stdin,
+    0
+))
+</code></pre>
+<p>Part 2:</p>
+<pre><code>import sys
+import functools
+import itertools
+
+# the score of each item; a = 1
+scores = list(' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+def score(lines):
+    rest = lines[1:]
+    common = next(c for c in lines[0] if all(c in l for l in rest))
+    return scores.index(common)
+
+print(functools.reduce(
+    lambda s, lines: s + score([l.strip() for l in lines]),
+    # take groups of 3 until the result is empty
+    iter(lambda: list(itertools.islice(sys.stdin, 3)), []),
+    0
+))
+</code></pre>
+<p>= <a href="https://adventofcode.com/2022/day/4">04</a> =</p>
+<pre><code>import sys
+import re
+
+line_re = re.compile(r'(\d+)-(\d+),(\d+)-(\d+)')
+
+def within(line):
+    n = [int(n) for n in line_re.match(line).group(1, 2, 3, 4)]
+    return n[0] &gt;= n[2] and n[1] &lt;= n[3] or \
+           n[2] &gt;= n[0] and n[3] &lt;= n[1]
+
+print(sum(
+    within(line) and 1 or 0 for line in sys.stdin
+))
+</code></pre>
+<p>Part 2 is the same, with the return value:</p>
+<pre><code>    return n[0] &lt;= n[3] and n[1] &gt;= n[2] or \
+           n[1] &lt;= n[2] and n[0] &gt;= n[3]
+</code></pre>
+<p>= <a href="https://adventofcode.com/2022/day/5">05</a> =</p>
+<p>The stacks are represented by lists. The initial state is loaded into the start of each list, then manipulated at the end of the lists.</p>
+<pre><code>import sys
+import re
+
+move_re = re.compile('move (\d*) from (\d*) to (\d*)')
+
+stack_count = 9
+stacks = [[] for n in range(stack_count)]
+
+for line in sys.stdin:
+    if len(line) &lt; 36:
+        break
+    for n in range(stack_count):
+        char = line[n * 4 + 1]
+        if char != ' ':
+            stacks[n].insert(0, char)
+
+for line in sys.stdin:
+    match = move_re.match(line)
+    if not match:
+        continue
+    number, src, to = (int(n) for n in move_re.match(line).group(1, 2, 3))
+    transferred = stacks[src-1][-number:]
+    transferred.reverse()
+    del stacks[src-1][-number:]
+    stacks[to-1].extend(transferred)
+
+print(&quot;&quot;.join(s[-1] for s in stacks))
+</code></pre>
+<p>For part two, remove the <code>reverse</code> line (which I did first, because I didn't read the instructions properly!)</p>
+<p>= <a href="https://adventofcode.com/2022/day/6">06</a> =</p>
+<p>Almost a one liner:</p>
+<pre><code>import sys
+
+data = sys.stdin.read()
+count = 4
+print(next(n for n in range(count, len(data)) if len(set(data[n-count:n])) == count))
+</code></pre>
+<p>Change count to 14 for the second step.</p>
+<p>= <a href="https://adventofcode.com/2022/day/7">07</a> =</p>
+<pre><code>import sys
+
+root = {}
+dir = root
+
+for line in sys.stdin:
+    if line.startswith(&quot;$ cd &quot;):
+        name = line[5:-1] # chop off the newline
+        if name == '/':
+            dir = root
+        else:
+            dir = dir[name]
+    elif not line.startswith(&quot;$&quot;):
+        size, name = line.split(maxsplit=1)
+        name = name[:-1] # chop off the newline
+        if size == &quot;dir&quot;:
+            dir.setdefault(name, {&quot;..&quot;: dir})
+        else:
+            dir[name] = int(size)
+
+def sizes(dir, all=[]):
+    total = 0
+    for name, val in dir.items():
+        if name == '..':
+            continue
+        if type(val) == dict:
+            total += sizes(val, all)[-1]
+        else:
+            total += val
+    all.append(total)
+    return all
+
+print(sum(s for s in sizes(root) if s &lt;= 100000))
+</code></pre>
+<p>For part 2, change the final <code>print</code> to</p>
+<pre><code>allsizes = sizes(root)
+used = allsizes[-1]
+required = 30000000 - (70000000 - used)
+print(min(s for s in sizes(root) if s &gt;= required))
+</code></pre>
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/2022-advent-of-code";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2022/12/31/2022-advent-of-code");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
