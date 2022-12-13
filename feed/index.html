@@ -5,8 +5,8 @@
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</description>
     <link>http://yourdomain.com/</link>
     <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 13 Dec 2022 12:23:30 +0000</pubDate>
-    <lastBuildDate>Tue, 13 Dec 2022 12:23:30 +0000</lastBuildDate>
+    <pubDate>Tue, 13 Dec 2022 12:34:30 +0000</pubDate>
+    <lastBuildDate>Tue, 13 Dec 2022 12:34:30 +0000</lastBuildDate>
     <generator>Jekyll v4.3.1</generator>
     
       <item>
@@ -224,6 +224,72 @@ for x in range(len(grid[0]) - 1):
 
 print(len(visible))
 &lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&quot;a-hrefhttpsadventofcodecom2022day909a&quot;&gt;&lt;a href=&quot;https://adventofcode.com/2022/day/9&quot;&gt;09&lt;/a&gt;&lt;/h1&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+
+visited = set((0,0))
+
+head = (0, 0)
+tail = (0, 0)
+
+dirs = {
+  'U': lambda x: (x[0], x[1] - 1),
+  'D': lambda x: (x[0], x[1] + 1),
+  'L': lambda x: (x[0] - 1, x[1]),
+  'R': lambda x: (x[0] + 1, x[1]),
+}
+
+signum = lambda x: x &amp;lt; 0 and -1 or x &amp;gt; 0 and 1 or 0
+
+for line in sys.stdin:
+  direction, count = line.split()
+  dir_fn = dirs[direction]
+  
+  for n in range(int(count)):
+    head = dir_fn(head)
+    dx = head[0] - tail[0]
+    dy = head[1] - tail[1]
+    if abs(dx) &amp;gt; 1 or abs(dy) &amp;gt; 1:
+      tail = (tail[0]+signum(dx), tail[1]+signum(dy))
+      visited.add(tail)
+
+print(len(visited))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Apparently this is wrong. I took a guess and subtracted one, and that was right. It looks like I got the constructor call for &lt;code&gt;visited&lt;/code&gt; wrong.&lt;/p&gt;
+&lt;p&gt;The second part involves extending it to a rope of 10 elements:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+
+visited = set()
+visited.add((0,0))
+
+rope = [(0, 0)] * 10
+
+dirs = {
+  'U': lambda x: (x[0], x[1] - 1),
+  'D': lambda x: (x[0], x[1] + 1),
+  'L': lambda x: (x[0] - 1, x[1]),
+  'R': lambda x: (x[0] + 1, x[1]),
+}
+
+signum = lambda x: x &amp;lt; 0 and -1 or x &amp;gt; 0 and 1 or 0
+
+for line in sys.stdin:
+  direction, count = line.split()
+  dir_fn = dirs[direction]
+  
+  for n in range(int(count)):
+    rope[0] = dir_fn(rope[0])
+    for n in range(0,9):
+      a = rope[n]
+      b = rope[n+1]
+      dx = a[0] - b[0]
+      dy = a[1] - b[1]
+      if abs(dx) &amp;gt; 1 or abs(dy) &amp;gt; 1:
+        rope[n+1] = (b[0]+signum(dx), b[1]+signum(dy))
+    visited.add(rope[-1])
+
+print(len(visited))
+&lt;/code&gt;&lt;/pre&gt;
 &lt;h1 id=&quot;a-hrefhttpsadventofcodecom2022day1010a&quot;&gt;&lt;a href=&quot;https://adventofcode.com/2022/day/10&quot;&gt;10&lt;/a&gt;&lt;/h1&gt;
 &lt;pre&gt;&lt;code&gt;import sys
 import unittest
@@ -255,7 +321,54 @@ for y in range(6):
     val = next(out)
     print((x &amp;gt;= val-1 and x &amp;lt;= val+1) and '#' or '.', end='')
   print()
-&lt;/code&gt;&lt;/pre&gt;</description>
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h1 id=&quot;a-hrefhttpsadventofcodecom2022day1111a&quot;&gt;&lt;a href=&quot;https://adventofcode.com/2022/day/11&quot;&gt;11&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;This one was tough - there are plenty of chances to misread the problem and type the wrong data.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import sys
+
+class Monkey:
+  def __init__(self, num, items, op, divisor, testtrue, testfalse):
+    self.num = num
+    self.items = items
+    self.op = op
+    self.divisor = divisor
+    self.testtrue = testtrue
+    self.testfalse = testfalse
+    self.inspections = 0
+
+  def inspect(self, monkeys):
+    items = self.items
+    self.items = []
+    self.inspections = self.inspections + len(items)
+    for i in items:
+      w = self.op(i) // 3
+      if (w % self.divisor) == 0:
+        monkeys[self.testtrue].items.append(w)
+      else:
+        monkeys[self.testfalse].items.append(w)
+
+monkeys = [
+  Monkey(0, [83, 97, 95, 67], lambda x: x * 19, 17, 2, 7),
+  Monkey(1, [71, 70, 79, 88, 56, 70], lambda x: x + 2, 19, 7, 0),
+  Monkey(2, [98, 51, 51, 63, 80, 85, 84, 95], lambda x: x + 7, 7, 4, 3),
+  Monkey(3, [77, 90, 82, 80, 79], lambda x: x + 1, 11, 6, 4),
+  Monkey(4, [68], lambda x: x * 5, 13, 6, 5),
+  Monkey(5, [60, 94], lambda x: x + 5, 3, 1, 0),
+  Monkey(6, [81, 51, 85], lambda x: x * x, 5, 5, 1),
+  Monkey(7, [98, 81, 63, 65, 84, 71, 84], lambda x: x + 3, 2, 2, 3),
+]
+
+for x in range(20):
+  for monkey in monkeys:
+    monkey.inspect(monkeys)
+inspections = [m.inspections for m in monkeys]
+inspections.sort()
+print(inspections[-1] * inspections[-2])
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Using this approach for part two doesnt work - the numbers get too big.&lt;/p&gt;
+&lt;h1 id=&quot;a-hrefhttpsadventofcodecom2022day1111a-1&quot;&gt;&lt;a href=&quot;https://adventofcode.com/2022/day/11&quot;&gt;11&lt;/a&gt;&lt;/h1&gt;
+&lt;p&gt;Looks interesting, it's essentially a maze solving algorithm.&lt;/p&gt;
+</description>
         <pubDate>Sat, 31 Dec 2022 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2022/12/31/2022-advent-of-code/</link>
         <guid isPermaLink="true">http://yourdomain.com/posts/2022/12/31/2022-advent-of-code/</guid>
