@@ -5,9 +5,65 @@
     <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</description>
     <link>http://yourdomain.com/</link>
     <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml" />
-    <pubDate>Tue, 03 Jan 2023 05:31:55 +0000</pubDate>
-    <lastBuildDate>Tue, 03 Jan 2023 05:31:55 +0000</lastBuildDate>
+    <pubDate>Tue, 10 Dec 2024 12:22:31 +0000</pubDate>
+    <lastBuildDate>Tue, 10 Dec 2024 12:22:31 +0000</lastBuildDate>
     <generator>Jekyll v4.3.1</generator>
+    
+      <item>
+        <title>How to install OSX El Captian</title>
+        <description>&lt;p&gt;I acquired an [aluminium Intel iMac](https://en.wikipedia.org/wiki/IMac_(Intel-based)#Aluminum_(2007%E2%80%932009). I proceeded to ruin the installation. Recovery still worked (if it doesn't, try some &lt;a href=&quot;https://gist.github.com/coolaj86/22d08c4b582779485e0df11c5d84063a&quot;&gt;other instructions&lt;/a&gt;). Attempting to reinstall from recovery wants to download from the app store, but apparently El Capitan isn't in there anymore. How can I recover it?&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Download El Capitan &lt;a href=&quot;https://support.apple.com/en-us/HT211683&quot;&gt;from Apple&lt;/a&gt;.  Its sha256sum is &lt;code&gt;bca6d2b699fc03e7876be9c9185d45bf4574517033548a47cb0d0938c5732d59&lt;/code&gt;, md5 is &lt;code&gt;5040a59d785d7da609755244c4ed136c&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Most guides - including those from Apple - say that you have a &lt;code&gt;.app&lt;/code&gt; file. This downloaded file clearly isn't. Boot into recovery, then transfer the &lt;code&gt;.dmg&lt;/code&gt; file to the Mac (try using an exfat partition for a USB drive).&lt;/li&gt;
+&lt;li&gt;Use disk manager to mount the image. The partition on the USB disk didn't show up for me, so open a terminal, then:
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;diskutil list&lt;/code&gt; to identify the partition&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cd /Volumes&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mkdir usb&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mount -t exfat /dev/disk2s1 usb&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Close the terminal, open Disk Utility&lt;/li&gt;
+&lt;li&gt;Go to File, Open Disk Image&lt;/li&gt;
+&lt;li&gt;Find the mounted USB disk, and open &lt;code&gt;InstallMacOSX.dmg&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;li&gt;Create a volume to store the files if necessary. (Don't format it as FAT - it can't store files big enough!)&lt;/li&gt;
+&lt;li&gt;&lt;pre&gt;&lt;code&gt;$ cd (the volume to put files in)
+$ pkgutil --expand InstallMacOSX.pkg elcapitan
+$ ls -F elcapitan
+Distribution*       InstallMacOSX.pkg/ Resources/
+$ cd elcapitan/InstallMacOSX.pkg/
+$ tar -xvf Payload
+x .
+x ./Install OS X El Capitan.app
+x ./Install OS X El Capitan.app/Contents
+…
+$ mv InstallESD.dmg &amp;quot;Install OS X El Capitan.app/Contents/SharedSupport&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;Erase the disk and mount it&lt;pre&gt;&lt;code&gt;# diskutil eraseDisk HFS+ elcapitan disk2
+# diskutil mount /dev/disk2s2
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;&lt;pre&gt;&lt;code&gt;# &amp;quot;Install OS X El Capitan.app/Contents/Resources/createinstallmedia&amp;quot; --volume /Volumes/elcapitan --applicationpath &amp;quot;Install OS X El Capitan.app&amp;quot;
+Ready to start.
+To continue we need to erase the disk at /Volumes/MyBlankUSBDrive.
+If you wish to continue type (Y) then press return:
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;Boot to the USB drive (hold Command/Alt). If you try to install the obvious way, the installation will fail, saying the installer is corrupt. Open a terminal instead, and run:&lt;pre&gt;&lt;code&gt;installer -pkg  /Volumes/Mac\ OS\ X\ Install\ DVD/Packages/OSInstall.mpkg -target /Volumes/&amp;quot;XXX&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;That was way more complicated than it had to be! Why can't I download a bootable ISO? I'm keeping an image of the install USB stick.&lt;/p&gt;
+&lt;p&gt;= Resources =&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;https://chriswarrick.com/blog/2020/06/03/reinstalling-macos-what-to-try-when-all-else-fails/#toc-entry-4&lt;/li&gt;
+&lt;li&gt;https://gist.github.com/coolaj86/22d08c4b582779485e0df11c5d84063a&lt;/li&gt;
+&lt;li&gt;https://apple.stackexchange.com/a/232016&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Wed, 15 Nov 2023 00:00:00 +0000</pubDate>
+        <link>http://yourdomain.com/posts/2023/11/15/osx-el-capitan-install/</link>
+        <guid isPermaLink="true">http://yourdomain.com/posts/2023/11/15/osx-el-capitan-install/</guid>
+        
+        
+      </item>
     
       <item>
         <title>2022 Advent of Code</title>
@@ -1125,40 +1181,6 @@ pulse 488
         <pubDate>Sun, 08 Oct 2017 00:00:00 +0000</pubDate>
         <link>http://yourdomain.com/posts/2017/10/08/jekyll-blog-travis-ci/</link>
         <guid isPermaLink="true">http://yourdomain.com/posts/2017/10/08/jekyll-blog-travis-ci/</guid>
-        
-        
-      </item>
-    
-      <item>
-        <title>Check that your flash memory isn't fake</title>
-        <description>&lt;p&gt;Here's how I've checked that my flash memory (USB stick, SD card etc) isn't fake.  The idea is to use a cipher to produce a psuedorandom stream, write its output to the flash memory, then genenrate the stream again comparing it to the card.&lt;/p&gt;
-&lt;p&gt;First, find out how big the flash is:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ cat /proc/paritions
-major minor  #blocks  name
-...
-8       16   30736384 sdb
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Some quick maths tells me the block size is 1024 bytes.  Next, use &lt;code&gt;openssl&lt;/code&gt; to encrypt some zeroes, writing the output to the card:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-passworrd -nosalt | sudo tee /dev/sdb &amp;gt; /dev/null
-30736384+0 records in
-30736384+0 records out
-31474057216 bytes (31 GB) copied, 989.076 s, 31.8 MB/s
-tee: /dev/sdb: No space left on device
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;I don't know why it complains about no space, but the number of bytes written looks correct.&lt;/p&gt;
-&lt;p&gt;(Change some-password to some other word.)  &lt;code&gt;-nosalt&lt;/code&gt; prevents openssl writing a header, which contains the password salt.  Because our encryption key (the &lt;code&gt;some-password&lt;/code&gt; above) doesn't need to be secure, we don't care about it, and will stop the same stream being output next time.&lt;/p&gt;
-&lt;p&gt;Now check the result:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;$ dd if=/dev/zero bs=1024 count=30736384 | openssl enc -aes128 -k some-password -nosalt | sudo cmp - /dev/sdb
-30736384+0 records in
-30736384+0 records out
-31474057216 bytes (31 GB) copied, 367.183 s, 85.7 MB/s
-cmp: EOF on /dev/sdb
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;If it hits the end without complaining about differences, what's on the card is what was produced again by the cipher stream, so the card contains the advertised flash chip.&lt;/p&gt;
-</description>
-        <pubDate>Sat, 11 Jul 2015 00:00:00 +0000</pubDate>
-        <link>http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/</link>
-        <guid isPermaLink="true">http://yourdomain.com/posts/2015/07/11/check-for-fake-flash/</guid>
         
         
       </item>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>How to install OSX El Captian</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.">
+    <link rel="canonical" href="http://yourdomain.com/posts/2023/11/15/osx-el-capitan-install/">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <div class="post-nav">
+    <p class="post-nav-older"><a href="/posts/2022/12/31/2022-advent-of-code/">2022 Advent of Code</a></p>
+    <p class="post-nav-newer">&nbsp;</p>
+    <a href="/">Home</a>
+  </div>
+
+  <header class="post-header">
+    <h1>How to install OSX El Captian</h1>
+    <p class="meta">2023-11-15</p>
+  </header>
+
+  <article class="post-content">
+  
+  <p>I acquired an [aluminium Intel iMac](https://en.wikipedia.org/wiki/IMac_(Intel-based)#Aluminum_(2007%E2%80%932009). I proceeded to ruin the installation. Recovery still worked (if it doesn't, try some <a href="https://gist.github.com/coolaj86/22d08c4b582779485e0df11c5d84063a">other instructions</a>). Attempting to reinstall from recovery wants to download from the app store, but apparently El Capitan isn't in there anymore. How can I recover it?</p>
+<ol>
+<li>Download El Capitan <a href="https://support.apple.com/en-us/HT211683">from Apple</a>.  Its sha256sum is <code>bca6d2b699fc03e7876be9c9185d45bf4574517033548a47cb0d0938c5732d59</code>, md5 is <code>5040a59d785d7da609755244c4ed136c</code>.</li>
+<li>Most guides - including those from Apple - say that you have a <code>.app</code> file. This downloaded file clearly isn't. Boot into recovery, then transfer the <code>.dmg</code> file to the Mac (try using an exfat partition for a USB drive).</li>
+<li>Use disk manager to mount the image. The partition on the USB disk didn't show up for me, so open a terminal, then:
+<ol>
+<li><code>diskutil list</code> to identify the partition</li>
+<li><code>cd /Volumes</code></li>
+<li><code>mkdir usb</code></li>
+<li><code>mount -t exfat /dev/disk2s1 usb</code></li>
+<li>Close the terminal, open Disk Utility</li>
+<li>Go to File, Open Disk Image</li>
+<li>Find the mounted USB disk, and open <code>InstallMacOSX.dmg</code></li>
+</ol>
+</li>
+<li>Create a volume to store the files if necessary. (Don't format it as FAT - it can't store files big enough!)</li>
+<li><pre><code>$ cd (the volume to put files in)
+$ pkgutil --expand InstallMacOSX.pkg elcapitan
+$ ls -F elcapitan
+Distribution*       InstallMacOSX.pkg/ Resources/
+$ cd elcapitan/InstallMacOSX.pkg/
+$ tar -xvf Payload
+x .
+x ./Install OS X El Capitan.app
+x ./Install OS X El Capitan.app/Contents
+…
+$ mv InstallESD.dmg &quot;Install OS X El Capitan.app/Contents/SharedSupport&quot;
+</code></pre></li>
+<li>Erase the disk and mount it<pre><code># diskutil eraseDisk HFS+ elcapitan disk2
+# diskutil mount /dev/disk2s2
+</code></pre></li>
+<li><pre><code># &quot;Install OS X El Capitan.app/Contents/Resources/createinstallmedia&quot; --volume /Volumes/elcapitan --applicationpath &quot;Install OS X El Capitan.app&quot;
+Ready to start.
+To continue we need to erase the disk at /Volumes/MyBlankUSBDrive.
+If you wish to continue type (Y) then press return:
+</code></pre></li>
+<li>Boot to the USB drive (hold Command/Alt). If you try to install the obvious way, the installation will fail, saying the installer is corrupt. Open a terminal instead, and run:<pre><code>installer -pkg  /Volumes/Mac\ OS\ X\ Install\ DVD/Packages/OSInstall.mpkg -target /Volumes/&quot;XXX&quot;
+</code></pre></li>
+</ol>
+<p>That was way more complicated than it had to be! Why can't I download a bootable ISO? I'm keeping an image of the install USB stick.</p>
+<p>= Resources =</p>
+<ul>
+<li>https://chriswarrick.com/blog/2020/06/03/reinstalling-macos-what-to-try-when-all-else-fails/#toc-entry-4</li>
+<li>https://gist.github.com/coolaj86/22d08c4b582779485e0df11c5d84063a</li>
+<li>https://apple.stackexchange.com/a/232016</li>
+</ul>
+
+
+    <div id="comment_count"></div>
+  <div id="disqus_thread" style="display: none;"></div>
+  <script type="text/javascript">
+    var DISQUSWIDGETS = {
+      displayCount: function(data) {
+        var count = data.counts.length && data.counts[0].comments;
+        document.getElementById("comment_count_link").innerHTML = "Show " + count + " comment" + (count == 1 ? "" : "s");
+      }
+    };
+    var disqus_identifier = "/blog/osx-el-capitan-install";
+
+    var showComments = function() {
+      document.getElementById("comment_count").style.display = "none";
+      document.getElementById("disqus_thread").style.display = "block";
+
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//dspblog.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    };
+
+    ( function() {
+        document.getElementById("comment_count").innerHTML = "<a id='comment_count_link' onclick='showComments();'>Show comments</a>";
+
+        var s = document.createElement("script");
+        var encoded_id = encodeURI("/posts/2023/11/15/osx-el-capitan-install");
+        s.setAttribute("src", "http://dspblog.disqus.com/count-data.js?1=" + encoded_id);
+        document.getElementsByTagName("HEAD")[0].appendChild(s);
+    })();
+  </script>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
